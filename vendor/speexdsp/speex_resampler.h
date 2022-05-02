@@ -336,14 +336,23 @@ int speex_resampler_skip_zeros(SpeexResamplerState *st);
  */
 int speex_resampler_reset_mem(SpeexResamplerState *st);
 
+/** Get the required input frame count for a given output length.
+ * @param st Resampler state
+ * @param out_len Output length
+ * @param in_len Input length
+ */
+int speex_resampler_get_required_input_frame_count(SpeexResamplerState *st,
+                                                   spx_uint32_t out_len,
+                                                   spx_uint32_t *in_len);
+
 /** Get the expected output frame count for a given input length.
  * @param st Resampler state
  * @param in_len Input length
  * @param out_len Output length
  */
-int speex_get_expected_output_frame_count(SpeexResamplerState *st,
-                                          spx_uint32_t in_len,
-                                          spx_uint32_t *out_len);
+int speex_resampler_get_expected_output_frame_count(SpeexResamplerState *st,
+                                                    spx_uint32_t in_len,
+                                                    spx_uint32_t *out_len);
 
 /** Returns the English meaning for an error code
  * @param err Error code

@@ -156,16 +156,11 @@ void SpectrogramController::updateIfNeeded() {
 
         // Apply windowing.
         for (int i = 0; i < m_fftLength; ++i) {
-            // Blackman - Nuttall
-            constexpr double a0 = 0.3635819;
-            constexpr double a1 = 0.4891775;
-            constexpr double a2 = 0.1365995;
-            constexpr double a3 = 0.0106411;
+            // Blackman
+            constexpr double a0 = 0.53836;
 
-            trackSamples[i] *= a0 -
-                               a1 * cos((2 * M_PI * i) / (m_fftLength - 1)) +
-                               a2 * cos((4 * M_PI * i) / (m_fftLength - 1)) -
-                               a3 * cos((6 * M_PI * i) / (m_fftLength - 1));
+            trackSamples[i] *=
+                a0 - (1 - a0) * cos((2 * M_PI * i) / (m_fftLength - 1));
         }
 
         // Compute FFT.

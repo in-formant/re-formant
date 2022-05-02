@@ -1304,9 +1304,36 @@ EXPORT int speex_resampler_reset_mem(SpeexResamplerState *st) {
   return RESAMPLER_ERR_SUCCESS;
 }
 
-EXPORT int speex_get_expected_output_frame_count(SpeexResamplerState *st,
-                                                 spx_uint32_t in_len,
-                                                 spx_uint32_t *out_len) {
+EXPORT int speex_resampler_get_required_input_frame_count(
+    const SpeexResamplerState *st, spx_uint32_t out_len, spx_uint32_t *in_len) {
+  spx_uint32_t count;
+
+  if (st == NULL || in_len == NULL) {
+    return RESAMPLER_ERR_INVALID_ARG;
+  }
+
+  *in_len = 0;
+
+  if (out_len == 0) {
+    return RESAMPLER_ERR_SUCCESS; /* Nothing to do. */
+  }
+
+  /* only uses interleaved APIs so we can safely just use channel
+   * index 0 for the calculations. */
+  if (st->nb_channels == 0) {
+    return RESAMPLER_ERR_BAD_STATE;
+  }
+
+  count = out_len * st->int_advance;
+  count += (st->samp_frac_num[0] + (out_len * st->frac_advance)) / st->den_rate;
+
+  *in_len = count;
+
+  return RESAMPLER_ERR_SUCCESS;
+}
+
+EXPORT int speex_resampler_get_expected_output_frame_count(
+    SpeexResamplerState *st, spx_uint32_t in_len, spx_uint32_t *out_len) {
   spx_uint32_t count;
   spx_uint32_t last_sample;
   spx_uint32_t samp_frac_num;
@@ -1321,7 +1348,7 @@ EXPORT int speex_get_expected_output_frame_count(SpeexResamplerState *st,
     return RESAMPLER_ERR_SUCCESS; /* Nothing to do. */
   }
 
-  /* miniaudio only uses interleaved APIs so we can safely just use channel
+  /* only uses interleaved APIs so we can safely just use channel
    * index 0 for the calculations. */
   if (st->nb_channels == 0) {
     return RESAMPLER_ERR_BAD_STATE;

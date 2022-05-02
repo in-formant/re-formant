@@ -2,10 +2,11 @@
 #define REFORMANT_PROCESSING_PITCHCONTROLLER_H
 
 #include <fftw3.h>
-#include <speex_resampler.h>
 
 #include <mutex>
 #include <vector>
+
+#include "resampler.h"
 
 namespace reformant {
 
@@ -19,7 +20,6 @@ struct PitchResults {
 class PitchController {
    public:
     PitchController(AppState& appState);
-    virtual ~PitchController();
 
     void forceClear(bool lock = true);
 
@@ -32,7 +32,7 @@ class PitchController {
 
     std::mutex m_mutex;
 
-    SpeexResamplerState* m_dsResampler;
+    Resampler m_dsResampler;
 
     double m_lastTime;
     std::vector<double> m_times;

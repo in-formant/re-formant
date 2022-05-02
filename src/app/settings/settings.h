@@ -53,6 +53,9 @@ class Settings {
     bool doStartRecordingOnLaunch();
     void setStartRecordingOnLaunch(bool bFlag);
 
+    bool doNoiseReduction();
+    void setNoiseReduction(bool bFlag);
+
     int audioHostApi();
     void setAudioHostApi(int hostApiType);
 

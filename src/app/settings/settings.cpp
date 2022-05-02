@@ -18,6 +18,7 @@ static constexpr auto keySpectrumFreqMax = "spectrum_freq_max";
 static constexpr auto keySpectrumMinDb = "spectrum_min_db";
 static constexpr auto keySpectrumMaxDb = "spectrum_max_db";
 static constexpr auto keyStartRecordingOnLaunch = "auto_record_on_launch";
+static constexpr auto keyEnableNoiseReduction = "enable_noise_reduction";
 static constexpr auto keyAudioHostApi = "audio_host_api";
 static constexpr auto keyInputDeviceName = "audio_input_device_name";
 static constexpr auto keyOutputDeviceName = "audio_output_device_name";
@@ -126,6 +127,14 @@ bool Settings::doStartRecordingOnLaunch() {
 
 void Settings::setStartRecordingOnLaunch(bool bFlag) {
     if (mapBoolSet(m_map, keyStartRecordingOnLaunch, bFlag)) save();
+}
+
+bool Settings::doNoiseReduction() {
+    return save(mapBoolGet(m_map, keyEnableNoiseReduction, false));
+}
+
+void Settings::setNoiseReduction(bool bFlag) {
+    if (mapBoolSet(m_map, keyEnableNoiseReduction, bFlag)) save();
 }
 
 int Settings::audioHostApi() {

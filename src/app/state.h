@@ -5,6 +5,7 @@
 #include "audio/audioinput.h"
 #include "audio/audiooutput.h"
 #include "processing/audiotrack.h"
+#include "processing/resampler.h"
 #include "settings/settings.h"
 
 struct GLFWwindow;
@@ -48,6 +49,7 @@ struct AppState {
     AudioDevices audioDevices;
     AudioInput audioInput;
     AudioOutput audioOutput;
+    Resampler audioOutputResampler;
 
     AudioTrack audioTrack;
 

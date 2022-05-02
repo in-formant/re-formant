@@ -4,8 +4,8 @@
 
 #include "audiofiles.h"
 
-bool reformant::readAudioFile(const std::string& filePath,
-                              std::vector<float>& data, int* sampleRate) {
+bool reformant::audiofiles::readFile(const std::string& filePath,
+                                 std::vector<float>& data, int* sampleRate) {
     SNDFILE* sndfile;
     int mode = SFM_READ;
 

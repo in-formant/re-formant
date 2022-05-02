@@ -4,26 +4,31 @@
 
 #include "audiofiles.h"
 
-bool reformant::writeAudioFile(const std::string& filePath, const int format,
-                               const std::vector<float>& data,
-                               const int sampleRate) {
+bool reformant::audiofiles::writeFile(const std::string& filePath,
+                                      const AudioFileFormat& format,
+                                      const std::vector<float>& data,
+                                      const int sampleRate) {
     SNDFILE* sndfile;
     int mode = SFM_WRITE;
 
-    SF_INFO sfinfo;
-    memset(&sfinfo, 0, sizeof(SF_INFO));
+    SF_INFO info;
+    memset(&info, 0, sizeof(SF_INFO));
 
-    sfinfo.samplerate = sampleRate;
-    sfinfo.channels = 1;
-    sfinfo.format = (format & SF_FORMAT_TYPEMASK) | SF_FORMAT_PCM_16;
+    info.channels = 1;
+    info.samplerate = sampleRate;
+    info.format = format.format;
 
-    sndfile = sf_open(filePath.c_str(), mode, &sfinfo);
+    sndfile = sf_open(filePath.c_str(), mode, &info);
 
     if (sndfile == nullptr) {
         std::cerr << "sndfile: error opening file:" << sf_strerror(nullptr)
                   << std::endl;
         return false;
     }
+
+    double compression = 0.5;
+    sf_command(sndfile, SFC_SET_COMPRESSION_LEVEL, &compression,
+               sizeof(double));
 
     sf_command(sndfile, SFC_SET_SCALE_INT_FLOAT_WRITE, nullptr, SF_TRUE);
 

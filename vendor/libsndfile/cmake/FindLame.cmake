@@ -1,0 +1,26 @@
+
+if (LAME_INCLUDE_DIR)
+    # Already in cache, be silent
+    set(LAME_FIND_QUIETLY TRUE)
+endif ()
+
+find_package (PkgConfig QUIET)
+pkg_check_modules(PC_LAME QUIET libmpg123>=1.25.10)
+
+FIND_PATH(LAME_INCLUDE_DIR lame/lame.h)
+FIND_LIBRARY(LAME_LIBRARIES NAMES mp3lame)
+
+IF(LAME_INCLUDE_DIR AND LAME_LIBRARIES)
+	SET(LAME_FOUND TRUE)
+ENDIF(LAME_INCLUDE_DIR AND LAME_LIBRARIES)
+
+IF(LAME_FOUND)
+	IF (NOT Lame_FIND_QUIETLY)
+		MESSAGE(STATUS "Found lame includes:	${LAME_INCLUDE_DIR}/lame/lame.h")
+		MESSAGE(STATUS "Found lame library: ${LAME_LIBRARIES}")
+	ENDIF (NOT Lame_FIND_QUIETLY)
+ELSE(LAME_FOUND)
+	IF (Lame_FIND_REQUIRED)
+		MESSAGE(FATAL_ERROR "Could NOT find lame development files")
+	ENDIF (Lame_FIND_REQUIRED)
+ENDIF(LAME_FOUND)

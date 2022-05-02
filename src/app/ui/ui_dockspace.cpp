@@ -3,6 +3,8 @@
 #include <iostream>
 
 #include "../audiofiles/audiofiles.h"
+#include "../processing/pitchcontroller.h"
+#include "../processing/spectrogramcontroller.h"
 #include "ui_private.h"
 
 void reformant::ui::dockspace(AppState& appState) {
@@ -29,18 +31,32 @@ void reformant::ui::dockspace(AppState& appState) {
                          ImGuiDockNodeFlags_PassthruCentralNode);
     }
 
+    appState.audioTrack.mutex().lock();
+    const int trackSampleRate = appState.audioTrack.sampleRate();
+    appState.audioTrack.mutex().unlock();
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New", "CTRL+N", nullptr)) {
+                std::lock_guard trackGuard(appState.audioTrack.mutex());
+                if (appState.audioOutput.isPlaying())
+                    appState.audioOutput.stopPlaying();
+                appState.audioTrack.reset();
+                appState.spectrogramController->setTime(0);
+                appState.spectrogramController->forceClear();
+                appState.pitchController->forceClear();
+            }
+
             if (ImGui::MenuItem("Open", "CTRL+O", nullptr)) {
-                ifd::FileDialog::Instance().Open(
-                    "AudioFileOpenDialog", "Open an audio file",
-                    reformant::getAudioFileReadFilter());
+                ifd::FileDialog::Instance().Open("AudioFileOpenDialog",
+                                                 "Open an audio file",
+                                                 audiofiles::getReadFilter());
             }
 
             if (ImGui::MenuItem("Save", "CTRL+S", nullptr)) {
                 ifd::FileDialog::Instance().Save(
                     "AudioFileSaveDialog", "Save an audio file",
-                    reformant::getSupportedAudioFormats().filter);
+                    audiofiles::getWriteFilter(trackSampleRate));
             }
 
             ImGui::EndMenu();
@@ -65,14 +81,15 @@ void reformant::ui::dockspace(AppState& appState) {
 
             std::vector<float> data;
             int sampleRate;
-            if (reformant::readAudioFile(filePath, data, &sampleRate)) {
+            if (audiofiles::readFile(filePath, data, &sampleRate)) {
                 std::lock_guard lock(appState.audioTrack.mutex());
                 appState.audioTrack.append(data, sampleRate);
             }
         }
-        std::cout << "audio file read filter: "
-                  << reformant::getAudioFileReadFilter() << std::endl;
         ifd::FileDialog::Instance().Close();
+
+        std::cout << "audio file read filter: " << audiofiles::getReadFilter()
+                  << std::endl;
     }
 
     if (ifd::FileDialog::Instance().IsDone("AudioFileSaveDialog")) {
@@ -82,19 +99,20 @@ void reformant::ui::dockspace(AppState& appState) {
             const size_t formatIndex =
                 ifd::FileDialog::Instance().GetSelectedFilter();
 
-            const int format =
-                reformant::getSupportedAudioFormats().formats[formatIndex];
-
             appState.audioTrack.mutex().lock();
             const auto data = appState.audioTrack.data();
-            const int sampleRate = appState.audioTrack.sampleRate();
             appState.audioTrack.mutex().unlock();
 
-            if (reformant::writeAudioFile(filePath, format, data, sampleRate)) {
+            const auto formats =
+                audiofiles::getCompatibleFormats(trackSampleRate);
+            const auto& format = formats[formatIndex];
+
+            if (audiofiles::writeFile(filePath, format, data,
+                                      trackSampleRate)) {
             }
         }
         std::cout << "audio file write filter: "
-                  << reformant::getSupportedAudioFormats().filter << std::endl;
+                  << audiofiles::getWriteFilter(trackSampleRate) << std::endl;
         ifd::FileDialog::Instance().Close();
     }
 }

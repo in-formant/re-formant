@@ -14,7 +14,7 @@ namespace {
 void subtractReferenceMean(std::vector<float>& s);
 std::vector<float> downsampleSignal(const std::vector<float>& s, int off,
                                     int len, double Fs, double Fds,
-                                    SpeexResamplerState* resampler);
+                                    Resampler& resampler);
 void calculateDownsampledNCCF(const std::vector<float>& dss, int dsn, int dsK1,
                               int dsK2, std::vector<double>& dsNCCF);
 void calculateOriginalNCCF(
@@ -28,19 +28,12 @@ std::vector<std::pair<double, double>> findPeaksWithThreshold(
 
 PitchController::PitchController(AppState& appState)
     : appState(appState),
+      m_dsResampler(4),
       m_lastTime(0),
       m_minSilenceRunLength(0),
       m_minVoicingRunLength(0),
       m_pitchBuffer(std::max(m_minSilenceRunLength, m_minVoicingRunLength) + 1,
                     PitchPoint{0, -1}) {
-    int error;
-    m_dsResampler = speex_resampler_init(1, 48000, 2000, 4, &error);
-    if (error != 0) {
-        std::cerr << "Speex new error: " << speex_resampler_strerror(error)
-                  << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
     F0min = 50;
     F0max = 600;
     cand_tr = 0.3;
@@ -55,8 +48,6 @@ PitchController::PitchController(AppState& appState)
     n_cands = 20;
 }
 
-PitchController::~PitchController() { speex_resampler_destroy(m_dsResampler); }
-
 void PitchController::forceClear(bool lock) {
     if (lock) m_mutex.lock();
 
@@ -64,21 +55,8 @@ void PitchController::forceClear(bool lock) {
     m_pitches.clear();
     std::fill(m_pitchBuffer.begin(), m_pitchBuffer.end(), PitchPoint{0, -1});
 
-    int error;
-
-    error = speex_resampler_reset_mem(m_dsResampler);
-    if (error != 0) {
-        std::cerr << "Speex reset error: " << speex_resampler_strerror(error)
-                  << std::endl;
-        return;
-    }
-
-    error = speex_resampler_skip_zeros(m_dsResampler);
-    if (error != 0) {
-        std::cerr << "Speex skip zeros error: "
-                  << speex_resampler_strerror(error) << std::endl;
-        return;
-    }
+    m_dsResampler.reset();
+    m_dsResampler.skipZeros();
 
     if (lock) m_mutex.unlock();
 }
@@ -146,9 +124,8 @@ void PitchController::updateIfNeeded() {
         calculateDownsampledNCCF(dss, dsn, dsK1, dsK2, dsNCCF);
         auto dsPeaks = findPeaksWithThreshold(dsNCCF, cand_tr, n_cands, false);
 
-        const double time = (trackIndex0 + is -
-                             speex_resampler_get_input_latency(m_dsResampler)) /
-                            Fs;
+        const double time =
+            (trackIndex0 + is - m_dsResampler.inputLatency()) / Fs;
         double pitch = -1;
 
         if (!dsPeaks.empty()) {
@@ -229,48 +206,11 @@ void subtractReferenceMean(std::vector<float>& s) {
 
 std::vector<float> downsampleSignal(const std::vector<float>& s, const int off,
                                     const int len, const double Fs,
-                                    const double Fds,
-                                    SpeexResamplerState* resampler) {
-    int error;
-
-    error = speex_resampler_reset_mem(resampler);
-    if (error != 0) {
-        std::cerr << "Speex reset error: " << speex_resampler_strerror(error)
-                  << std::endl;
-        return {};
-    }
-
-    error = speex_resampler_skip_zeros(resampler);
-    if (error != 0) {
-        std::cerr << "Speex skip zeros error: "
-                  << speex_resampler_strerror(error) << std::endl;
-        return {};
-    }
-
-    error = speex_resampler_set_rate(resampler, Fs, Fds);
-    if (error != 0) {
-        std::cerr << "Speex set ratio error: "
-                  << speex_resampler_strerror(error) << std::endl;
-        return {};
-    }
-
-    uint32_t ilen = len;
-    uint32_t olen;
-    speex_get_expected_output_frame_count(resampler, ilen, &olen);
-
-    std::vector<float> out(olen);
-
-    error = speex_resampler_process_float(resampler, 0, s.data() + off, &ilen,
-                                          out.data(), &olen);
-    if (error != 0) {
-        std::cerr << "Speex process error: " << speex_resampler_strerror(error)
-                  << std::endl;
-        return {};
-    }
-
-    out.resize(olen);
-
-    return out;
+                                    const double Fds, Resampler& resampler) {
+    resampler.setRate(Fs, Fds);
+    resampler.reset();
+    resampler.skipZeros();
+    return resampler.process(s, off, len);
 }
 
 void calculateDownsampledNCCF(const std::vector<float>& dss, const int dsn,

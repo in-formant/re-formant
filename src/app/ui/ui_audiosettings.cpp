@@ -92,6 +92,13 @@ void reformant::ui::audioSettings(AppState& appState) {
             appState.settings.setStartRecordingOnLaunch(autoStartRecord);
         }
 
+        bool enableNoiseReduction = appState.settings.doNoiseReduction();
+        if (ImGui::Checkbox("Enable noise reduction", &enableNoiseReduction)) {
+            std::lock_guard trackGuard(appState.audioTrack.mutex());
+            appState.audioTrack.setDenoising(enableNoiseReduction);
+            appState.settings.setNoiseReduction(enableNoiseReduction);
+        }
+
         const int currentSampleRate = (int)appState.audioTrack.sampleRate();
 
         if (ImGui::BeginCombo("Recording track sample rate",
@@ -112,10 +119,14 @@ void reformant::ui::audioSettings(AppState& appState) {
 
                 if (ImGui::Selectable(name.c_str(), isSelected)) {
                     std::lock_guard trackGuard(appState.audioTrack.mutex());
+                    bool wasPlaying = appState.audioOutput.isPlaying();
+                    double time = appState.spectrogramController->time();
+                    if (wasPlaying) appState.audioOutput.stopPlaying();
                     appState.audioTrack.setSampleRate(sampleRate);
                     appState.settings.setTrackSampleRate(sampleRate);
                     appState.spectrogramController->forceClear();
-                    appState.pitchController->forceClear();
+                    if (wasPlaying) appState.audioOutput.startPlaying();
+                    appState.spectrogramController->setTime(time);
                 }
             }
 

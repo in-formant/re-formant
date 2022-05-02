@@ -7,18 +7,22 @@ add_executable(ReFormant
     audio/audiooutput.h
     audio/setup_audio.cpp
     audio/setup_audio.h
-    audiofiles/audioformats.cpp
     audiofiles/audioread.cpp
     audiofiles/audiowrite.cpp
+    audiofiles/fileformats.cpp
     audiofiles/audiofiles.h
     processing/audiotrack.cpp
     processing/audiotrack.h
     processing/consumerthread.cpp
     processing/consumerthread.h
+    processing/denoiser.cpp
+    processing/denoiser.h
     processing/pitchcontroller.cpp
     processing/pitchcontroller.h
     processing/processingthread.cpp
     processing/processingthread.h
+    processing/resampler.cpp
+    processing/resampler.h
     processing/spectrogramcontroller.cpp
     processing/spectrogramcontroller.h
     readerwriterqueue/atomicops.h
@@ -53,7 +57,7 @@ target_link_libraries(ReFormant
             ImGui::Core ImGui::FreeType
             ImPlot ImFileDialog
             fftw3f speex_resampler
-            sndfile
+            sndfile rnnoise
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)

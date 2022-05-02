@@ -1,5 +1,7 @@
 #include "setup_audio.h"
 
+#include <iostream>
+
 #include "../processing/spectrogramcontroller.h"
 #include "../state.h"
 
@@ -68,23 +70,36 @@ void reformant::setupAudio(AppState& appState) {
     }
 
     appState.audioTrack.setSampleRate(appState.settings.trackSampleRate());
+    appState.audioTrack.setDenoising(appState.settings.doNoiseReduction());
+
+    // Create resampler for track-to-output-device conversion.
+    appState.audioOutputResampler.setRate(appState.audioTrack.sampleRate(),
+                                          appState.audioOutput.sampleRate());
 
     appState.audioOutput.setBufferCallback(
         [&](std::vector<float>& buffer) -> bool {
             const int bufferLength = buffer.size();
             const int trackSamples = appState.audioTrack.sampleCount();
             const int offset = appState.spectrogramController->timeSamples();
+            const double fsIn = appState.audioTrack.sampleRate();
+            const double fsOut = appState.audioOutput.sampleRate();
+
+            appState.audioOutputResampler.setRate(fsIn, fsOut);
 
             if (offset < trackSamples) {
+                const int inBufferLength =
+                    appState.audioOutputResampler.requiredInputFrames(
+                        bufferLength);
+
                 const int copyLength =
-                    std::min(bufferLength, trackSamples - offset);
+                    std::min(inBufferLength, trackSamples - offset);
                 const auto chunk = appState.audioTrack.data(offset, copyLength);
-                std::fill(buffer.begin(), buffer.end(), 0.0);
-                std::copy(chunk.begin(), chunk.begin() + copyLength,
-                          buffer.begin());
+
+                appState.audioOutputResampler.process(buffer, chunk);
+                buffer.resize(bufferLength, 0);
 
                 appState.spectrogramController->setTimeSamples(offset +
-                                                               bufferLength);
+                                                               inBufferLength);
                 return true;
             } else {
                 // Played past the end: stop playing.

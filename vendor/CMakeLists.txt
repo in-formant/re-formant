@@ -42,8 +42,15 @@ FetchContent_Declare(
 # libsndfile
 FetchContent_Declare(
     libsndfile
-    URL      https://github.com/libsndfile/libsndfile/releases/download/1.1.0/libsndfile-1.1.0.tar.xz
-    URL_HASH SHA256=0f98e101c0f7c850a71225fb5feaf33b106227b3d331333ddc9bacee190bcf41
+    GIT_REPOSITORY https://github.com/libsndfile/libsndfile.git
+    GIT_TAG        a17e32fda6ed6883bebe0d5f7e1c83cd88409bd6 # latest (because Lame dependency search is broken on 1.1.0)
+)
+
+# rnnoise
+FetchContent_Declare(
+    rnnoise
+    GIT_REPOSITORY https://github.com/mumble-voip/rnnoise.git # mumble's fork has the msvc vla fix
+    GIT_TAG        a9afcccb3c4f01e6e76a1ef67ccb58b7799856bf # latest
 )
 
 # -- GLFW setttings 
@@ -112,7 +119,27 @@ if(NOT fftw3_POPULATED)
     endif()
 endif()
 
-FetchContent_MakeAvailable(glfw glm portaudio libsndfile)
+FetchContent_MakeAvailable(glfw glm portaudio)
+
+FetchContent_GetProperties(libsndfile)
+if(NOT libsndfile_POPULATED)
+    FetchContent_Populate(libsndfile)
+
+    file(GLOB _libsndfile_patch "${CMAKE_CURRENT_SOURCE_DIR}/libsndfile/*")
+    file(COPY ${_libsndfile_patch} DESTINATION ${libsndfile_SOURCE_DIR})
+
+    add_subdirectory(${libsndfile_SOURCE_DIR} ${libsndfile_BINARY_DIR})
+endif()
+
+FetchContent_GetProperties(rnnoise)
+if(NOT rnnoise_POPULATED)
+    FetchContent_Populate(rnnoise)
+
+    file(GLOB _rnnoise_patch "${CMAKE_CURRENT_SOURCE_DIR}/rnnoise/*")
+    file(COPY ${_rnnoise_patch} DESTINATION ${rnnoise_SOURCE_DIR})
+
+    add_subdirectory(${rnnoise_SOURCE_DIR} ${rnnoise_BINARY_DIR})
+endif()
 
 # -- imgui
 
