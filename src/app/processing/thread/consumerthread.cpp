@@ -4,7 +4,7 @@
 #include <functional>
 #include <iostream>
 
-#include "../state.h"
+#include "../../state.h"
 
 using namespace std::chrono;
 using namespace reformant;

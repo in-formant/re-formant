@@ -10,6 +10,10 @@ void reformant::ui::render(AppState& appState) {
         ui::audioSettings(appState);
     }
 
+    if (appState.ui.showDisplaySettings) {
+        ui::displaySettings(appState);
+    }
+
     if (appState.ui.showProfiler) {
         ui::profiler(appState);
     }

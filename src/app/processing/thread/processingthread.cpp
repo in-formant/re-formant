@@ -4,9 +4,9 @@
 #include <functional>
 #include <iostream>
 
-#include "../processing/pitchcontroller.h"
-#include "../processing/spectrogramcontroller.h"
-#include "../state.h"
+#include "../../state.h"
+#include "../controller/pitchcontroller.h"
+#include "../controller/spectrogramcontroller.h"
 
 using namespace std::chrono;
 using namespace reformant;
@@ -28,9 +28,7 @@ void ProcessingThread::terminate() {
     m_thread.join();
 }
 
-int ProcessingThread::processingTimeMillis() {
-    return m_processingTime;
-}
+int ProcessingThread::processingTimeMillis() { return m_processingTime; }
 
 void ProcessingThread::run() {
     auto lastTime = steady_clock::now();

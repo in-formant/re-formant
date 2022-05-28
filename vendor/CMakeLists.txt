@@ -28,8 +28,6 @@ FetchContent_Declare(
     portaudio
     GIT_REPOSITORY https://github.com/PortAudio/portaudio.git
     GIT_TAG        af42647e3804f6a2472a00d943aaeedd641f7966
-    #URL      http://files.portaudio.com/archives/pa_stable_v190700_20210406.tgz
-    #URL_HASH SHA256=47EFBF42C77C19A05D22E627D42873E991EC0C1357219C0D74CE6A2948CB2DEF
 )
 
 # fftw3
@@ -81,6 +79,10 @@ set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
 set(BUILD_TESTS OFF CACHE INTERNAL "")
 set(ENABLE_SSE ON CACHE INTERNAL "")
 set(ENABLE_FLOAT ON CACHE INTERNAL "")
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL MSVC)
+    set(LIBM_LIBRARY OFF CACHE INTERNAL "")
+endif()
 
 # -- libsndfile settings
 

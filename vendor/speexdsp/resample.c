@@ -1305,7 +1305,7 @@ EXPORT int speex_resampler_reset_mem(SpeexResamplerState *st) {
 }
 
 EXPORT int speex_resampler_get_required_input_frame_count(
-    const SpeexResamplerState *st, spx_uint32_t out_len, spx_uint32_t *in_len) {
+    SpeexResamplerState *st, spx_uint32_t out_len, spx_uint32_t *in_len) {
   spx_uint32_t count;
 
   if (st == NULL || in_len == NULL) {

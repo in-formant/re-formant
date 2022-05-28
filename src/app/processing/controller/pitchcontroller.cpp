@@ -5,25 +5,23 @@
 #include <iostream>
 #include <limits>
 
-#include "../state.h"
-#include "util/util.h"
+#include "../../state.h"
+#include "../util/util.h"
 
 using namespace reformant;
 
 namespace {
 void subtractReferenceMean(std::vector<float>& s);
-std::vector<float> downsampleSignal(const std::vector<float>& s, int off,
-                                    int len, double Fs, double Fds,
-                                    Resampler& resampler);
-void calculateDownsampledNCCF(const std::vector<float>& dss, int dsn, int dsK1,
-                              int dsK2, std::vector<double>& dsNCCF);
-void calculateOriginalNCCF(
-    const std::vector<float>& s, int off, double Fs, double Fds, int n, int K,
-    const std::vector<std::pair<double, double>>& dsPeaks,
-    std::vector<double>& nccf);
+std::vector<float> downsampleSignal(const std::vector<float>& s, int off, int len,
+                                    double Fs, double Fds, Resampler& resampler);
+void calculateDownsampledNCCF(const std::vector<float>& dss, int dsn, int dsK1, int dsK2,
+                              std::vector<double>& dsNCCF);
+void calculateOriginalNCCF(const std::vector<float>& s, int off, double Fs, double Fds,
+                           int n, int K,
+                           const std::vector<std::pair<double, double>>& dsPeaks,
+                           std::vector<double>& nccf);
 std::vector<std::pair<double, double>> findPeaksWithThreshold(
-    const std::vector<double>& nccf, double cand_tr, int n_cands,
-    bool paraInterp);
+    const std::vector<double>& nccf, double cand_tr, int n_cands, bool paraInterp);
 }  // namespace
 
 PitchController::PitchController(AppState& appState)
@@ -74,21 +72,20 @@ void PitchController::updateIfNeeded() {
     // Track sample rate.
     const double Fs = appState.audioTrack.sampleRate();
 
+    if (Fs != m_lastSampleRate) {
+        m_lastTime = std::round((m_lastTime / m_lastSampleRate) * Fs);
+        m_lastSampleRate = Fs;
+    }
+
     // Track length in samples.
     const int trackSamples = appState.audioTrack.sampleCount();
 
-    // Track length in seconds.
-    const double trackDuration = trackSamples / Fs;
-
-    // Correlation window size. (secs)
-    const double w = 0.0075;
-
-    // Total window size.
-    const double windowLength = w + 1 / F0min;
-
-    if (!m_times.empty() && trackDuration < m_lastTime) {
+    if (!m_times.empty() && trackSamples < m_lastTime) {
         return;
     }
+
+    // Correlation window size. (secs)
+    constexpr double w = 0.0075;
 
     const int n = (int)std::round(w * Fs);
     const int K = (int)std::round(Fs / F0min);
@@ -104,10 +101,9 @@ void PitchController::updateIfNeeded() {
 
     const int J = std::round(0.03 * Fs);
 
-    const int trackIndex0 = (int)std::round(m_lastTime * Fs);
+    const int trackIndex0 = m_lastTime;
 
-    auto s =
-        appState.audioTrack.data(trackIndex0, trackSamples - trackIndex0 - 1);
+    auto s = appState.audioTrack.data(trackIndex0, trackSamples - trackIndex0 - 1);
 
     subtractReferenceMean(s);
 
@@ -124,8 +120,7 @@ void PitchController::updateIfNeeded() {
         calculateDownsampledNCCF(dss, dsn, dsK1, dsK2, dsNCCF);
         auto dsPeaks = findPeaksWithThreshold(dsNCCF, cand_tr, n_cands, false);
 
-        const double time =
-            (trackIndex0 + is - m_dsResampler.inputLatency()) / Fs;
+        const double time = (trackIndex0 + is - m_dsResampler.inputLatency()) / Fs;
         double pitch = -1;
 
         if (!dsPeaks.empty()) {
@@ -149,8 +144,7 @@ void PitchController::updateIfNeeded() {
             }
 
             if (vo_bias + maxVal >= minCost) {
-                const double Linterp =
-                    util::parabolicInterpolation(nccf, minLag).first;
+                const double Linterp = util::parabolicInterpolation(nccf, minLag).first;
                 pitch = Fs / Linterp;
             }
         }
@@ -193,7 +187,7 @@ void PitchController::updateIfNeeded() {
                     m_pitchBuffer.end());
     }
 
-    m_lastTime = trackDuration;
+    m_lastTime += is;
 }
 
 namespace {
@@ -205,8 +199,8 @@ void subtractReferenceMean(std::vector<float>& s) {
 }
 
 std::vector<float> downsampleSignal(const std::vector<float>& s, const int off,
-                                    const int len, const double Fs,
-                                    const double Fds, Resampler& resampler) {
+                                    const int len, const double Fs, const double Fds,
+                                    Resampler& resampler) {
     resampler.setRate(Fs, Fds);
     resampler.reset();
     resampler.skipZeros();
@@ -238,11 +232,10 @@ void calculateDownsampledNCCF(const std::vector<float>& dss, const int dsn,
     }
 }
 
-void calculateOriginalNCCF(
-    const std::vector<float>& s, const int off, const double Fs,
-    const double Fds, const int n, const int K,
-    const std::vector<std::pair<double, double>>& dsPeaks,
-    std::vector<double>& nccf) {
+void calculateOriginalNCCF(const std::vector<float>& s, const int off, const double Fs,
+                           const double Fds, const int n, const int K,
+                           const std::vector<std::pair<double, double>>& dsPeaks,
+                           std::vector<double>& nccf) {
     std::vector<int> lagsToCalculate;
 
     for (const auto& [dsk, y] : dsPeaks) {
@@ -345,4 +338,70 @@ PitchResults PitchController::getPitchesForRange(double timeMin, double timeMax,
     }
 
     return result;
+}
+
+static inline double voicing(double pitch) { return pitch < 0 ? 0 : 1; }
+
+double PitchController::getInterpolatedVoicing(double x) {
+    const int n = m_times.size();
+
+    int indexLeft, indexRight;
+
+    if (x < m_times[0]) {
+        indexLeft = indexRight = 0;
+    } else if (x >= m_times.back()) {
+        indexLeft = indexRight = n - 1;
+    } else {
+        for (int i = 0; i < n - 1; ++i) {
+            if (m_times[i] <= x && x < m_times[i + 1]) {
+                indexLeft = i;
+                indexRight = i + 1;
+            }
+        }
+    }
+
+    if (indexLeft == indexRight) {
+        return (m_pitches[indexLeft] < 0) ? 0 : 1;
+    }
+
+    const double x0 = m_times[indexLeft];
+    const double x1 = m_times[indexRight];
+
+    const double p0 = voicing(m_pitches[indexLeft]);
+    const double p1 = voicing(m_pitches[indexRight]);
+
+    constexpr double t0 = 0;
+    constexpr double t1 = 1;
+    const double t = (x - x0) / (x1 - x0);
+
+    // Cubic Hermite interpolation.
+
+    const double t2 = t * t;
+    const double t3 = t * t2;
+
+    const double h00 = 2 * t3 - 3 * t2 + 1;
+    const double h10 = t3 - 2 * t2 + t;
+    const double h01 = -2 * t3 + 3 * t2;
+    const double h11 = t3 - t2;
+
+    const double dp1 = p1 - p0;
+    const double dx1 = x1 - x0;
+
+    const double dp0 = (indexLeft > 0) ? p0 - voicing(m_pitches[indexLeft - 1]) : dp1;
+    const double dx0 = (indexLeft > 0) ? x0 - m_times[indexLeft - 1] : dx1;
+
+    const double dp2 =
+        (indexRight < n - 1) ? voicing(m_pitches[indexRight + 1]) - p1 : dp1;
+    const double dx2 = (indexRight < n - 1) ? m_times[indexRight + 1] - x1 : dx1;
+
+    const double df0 = dp0 / dx0;
+    const double df1 = dp1 / dx1;
+    const double df2 = dp2 / dx2;
+
+    const double m0 = .5 * (df1 + df0);
+    const double m1 = .5 * (df2 + df1);
+
+    const double p = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
+
+    return p;
 }

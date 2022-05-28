@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../processing/spectrogramcontroller.h"
+#include "../processing/controller/spectrogramcontroller.h"
 #include "../state.h"
 
 void reformant::setupAudio(AppState& appState) {

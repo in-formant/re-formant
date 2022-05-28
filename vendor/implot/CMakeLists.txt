@@ -1,7 +1,7 @@
 FetchContent_Declare(
     implot
     GIT_REPOSITORY https://github.com/in-formant/implot.git
-    GIT_TAG        58866f774e865eab409aaed957b6cadf2642694b # latest scales
+    GIT_TAG        5bd1a570d33ca48c4f7d5279a2aa2d7208cbf99d # latest scales
 )
 
 if(NOT implot_POPULATED)

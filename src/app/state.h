@@ -1,6 +1,8 @@
 #ifndef REFORMANT_STATE_H
 #define REFORMANT_STATE_H
 
+#include <imgui.h>
+
 #include "audio/audiodevices.h"
 #include "audio/audioinput.h"
 #include "audio/audiooutput.h"
@@ -9,12 +11,12 @@
 #include "settings/settings.h"
 
 struct GLFWwindow;
-struct ImFont;
 
 namespace reformant {
 
 class SpectrogramController;
 class PitchController;
+class FormantController;
 class ProcessingThread;
 
 struct UiState {
@@ -23,11 +25,17 @@ struct UiState {
     float scalingFactor;
     ImFont* faSolid;
     bool showAudioSettings;
+    bool showDisplaySettings;
     bool showProfiler;
     // audio settings
     const AudioHostApiInfo* currentAudioHostApi;
     const AudioDeviceInfo* currentAudioInDevice;
     const AudioDeviceInfo* currentAudioOutDevice;
+    // colors
+    ImVec4 pitchColor;
+    ImVec4 pitchOutlineColor;
+    ImVec4 formantColor;
+    ImVec4 formantOutlineColor;
     // spectrogram
     float spectrumPlotRatios[2];
     double plotTimeMin;
@@ -55,6 +63,7 @@ struct AppState {
 
     SpectrogramController* spectrogramController;
     PitchController* pitchController;
+    FormantController* formantController;
 
     ProcessingThread* processingThread;
 };

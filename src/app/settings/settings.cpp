@@ -10,6 +10,7 @@ using namespace reformant;
 static constexpr auto appName = "ReFormant";
 
 static constexpr auto keyShowAudioSettings = "show_audio_settings";
+static constexpr auto keyShowDisplaySettings = "show_display_settings";
 static constexpr auto keyPlotRatioSpectrogram = "plot_ratio_spectrogram";
 static constexpr auto keyPlotRatioWaveform = "plot_ratio_waveform";
 static constexpr auto keySpectrumFreqScale = "spectrum_freq_scale";
@@ -17,6 +18,8 @@ static constexpr auto keySpectrumFreqMin = "spectrum_freq_min";
 static constexpr auto keySpectrumFreqMax = "spectrum_freq_max";
 static constexpr auto keySpectrumMinDb = "spectrum_min_db";
 static constexpr auto keySpectrumMaxDb = "spectrum_max_db";
+static constexpr auto keyPitchColor = "pitch_color";
+static constexpr auto keyFormantColor = "formant_color";
 static constexpr auto keyStartRecordingOnLaunch = "auto_record_on_launch";
 static constexpr auto keyEnableNoiseReduction = "enable_noise_reduction";
 static constexpr auto keyAudioHostApi = "audio_host_api";
@@ -24,6 +27,10 @@ static constexpr auto keyInputDeviceName = "audio_input_device_name";
 static constexpr auto keyOutputDeviceName = "audio_output_device_name";
 static constexpr auto keyTrackSampleRate = "track_sample_rate";
 static constexpr auto keyFftLength = "fft_length";
+
+static const std::string suffixRed = "_r";
+static const std::string suffixGreen = "_g";
+static const std::string suffixBlue = "_b";
 
 // -- util function declarations.
 
@@ -39,8 +46,7 @@ double mapDoubleGet(SettingsMap& map, const std::string& key, double fDefault);
 bool mapDoubleSet(SettingsMap& map, const std::string& key, double value);
 std::string mapStrGet(SettingsMap& map, const std::string& key,
                       const std::string& sDefault);
-bool mapStrSet(SettingsMap& map, const std::string& key,
-               const std::string& value);
+bool mapStrSet(SettingsMap& map, const std::string& key, const std::string& value);
 }  // namespace
 
 // -- class definitions.
@@ -67,9 +73,18 @@ void Settings::setShowAudioSettings(bool bFlag) {
     save();
 }
 
+bool Settings::showDisplaySettings() {
+    return save(mapBoolGet(m_map, keyShowDisplaySettings, false));
+}
+
+void Settings::setShowDisplaySettings(bool bFlag) {
+    mapBoolSet(m_map, keyShowDisplaySettings, bFlag);
+    save();
+}
+
 void Settings::spectrumPlotRatios(float ratios[2]) {
-    ratios[0] = mapFloatGet(m_map, keyPlotRatioSpectrogram, 0.8);
-    ratios[1] = mapFloatGet(m_map, keyPlotRatioWaveform, 0.2);
+    ratios[0] = mapFloatGet(m_map, keyPlotRatioSpectrogram, 0.8f);
+    ratios[1] = mapFloatGet(m_map, keyPlotRatioWaveform, 0.2f);
     save();
 }
 
@@ -119,6 +134,36 @@ double Settings::spectrumMaxDb() {
 
 void Settings::setSpectrumMaxDb(double db) {
     if (mapDoubleSet(m_map, keySpectrumMaxDb, db)) save();
+}
+
+void Settings::pitchColor(float rgb[3]) {
+    rgb[0] = mapFloatGet(m_map, keyPitchColor + suffixRed, 0.49f);
+    rgb[1] = mapFloatGet(m_map, keyPitchColor + suffixGreen, 0.98f);
+    rgb[2] = mapFloatGet(m_map, keyPitchColor + suffixBlue, 1.00f);
+    save();
+}
+
+void Settings::setPitchColor(const float rgb[3]) {
+    if (mapFloatSet(m_map, keyPitchColor + suffixRed, rgb[0]) ||
+        mapFloatSet(m_map, keyPitchColor + suffixGreen, rgb[1]) ||
+        mapFloatSet(m_map, keyPitchColor + suffixBlue, rgb[2])) {
+        save();
+    }
+}
+
+void Settings::formantColor(float rgb[3]) {
+    rgb[0] = mapFloatGet(m_map, keyFormantColor + suffixRed, 0.49f);
+    rgb[1] = mapFloatGet(m_map, keyFormantColor + suffixGreen, 0.98f);
+    rgb[2] = mapFloatGet(m_map, keyFormantColor + suffixBlue, 1.00f);
+    save();
+}
+
+void Settings::setFormantColor(const float rgb[3]) {
+    if (mapFloatSet(m_map, keyFormantColor + suffixRed, rgb[0]) ||
+        mapFloatSet(m_map, keyFormantColor + suffixGreen, rgb[1]) ||
+        mapFloatSet(m_map, keyFormantColor + suffixBlue, rgb[2])) {
+        save();
+    }
 }
 
 bool Settings::doStartRecordingOnLaunch() {
@@ -193,8 +238,7 @@ SettingsBackend::SettingsBackend(ReadFunc read, WriteFunc write)
 namespace {
 
 // Set value and return true if changed.
-bool setAndCheck(SettingsMap& map, const std::string& key,
-                 const std::string& value) {
+bool setAndCheck(SettingsMap& map, const std::string& key, const std::string& value) {
     bool different = (map[key] != value);
     if (different) {
         map[key] = value;
@@ -277,8 +321,7 @@ std::string mapStrGet(SettingsMap& map, const std::string& key,
     }
 }
 
-bool mapStrSet(SettingsMap& map, const std::string& key,
-               const std::string& value) {
+bool mapStrSet(SettingsMap& map, const std::string& key, const std::string& value) {
     return setAndCheck(map, key, value);
 }
 

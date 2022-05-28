@@ -57,8 +57,7 @@ std::vector<float> AudioTrack::data(const int offset, int length) {
     }
 
     std::vector<float> copy(length);
-    std::copy(m_track.begin() + offset, m_track.begin() + offset + length,
-              copy.begin());
+    std::copy(m_track.begin() + offset, m_track.begin() + offset + length, copy.begin());
 
     return copy;
 }

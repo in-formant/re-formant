@@ -12,10 +12,10 @@
 #include <iostream>
 
 #include "audio/setup_audio.h"
-#include "processing/consumerthread.h"
-#include "processing/pitchcontroller.h"
-#include "processing/processingthread.h"
-#include "processing/spectrogramcontroller.h"
+#include "processing/controller/pitchcontroller.h"
+#include "processing/controller/spectrogramcontroller.h"
+#include "processing/thread/consumerthread.h"
+#include "processing/thread/processingthread.h"
 #include "state.h"
 #include "ui/ui.h"
 
@@ -31,8 +31,8 @@ int main(int argc, char* argv[]) {
 
     PaError paErr = Pa_Initialize();
     if (paErr != paNoError) {
-        std::cerr << "Failed to initialize PortAudio: "
-                  << Pa_GetErrorText(paErr) << std::endl;
+        std::cerr << "Failed to initialize PortAudio: " << Pa_GetErrorText(paErr)
+                  << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
     appState.pitchController = &pitchController;
 
     appState.ui.showAudioSettings = appState.settings.showAudioSettings();
+    appState.ui.showDisplaySettings = appState.settings.showDisplaySettings();
 
     appState.settings.spectrumPlotRatios(appState.ui.spectrumPlotRatios);
     appState.ui.plotTimeMin = 0;
@@ -57,6 +58,18 @@ int main(int argc, char* argv[]) {
     appState.ui.plotFreqScale = appState.settings.spectrumFreqScale();
     appState.ui.spectrumMinDb = appState.settings.spectrumMinDb();
     appState.ui.spectrumMaxDb = appState.settings.spectrumMaxDb();
+
+    appState.settings.pitchColor(&appState.ui.pitchColor.x);
+    appState.ui.pitchColor.w = 1.0f;
+    reformant::ui::setOutlineColor(&appState.ui.pitchColor.x,
+                                   &appState.ui.pitchOutlineColor.x);
+    appState.ui.pitchOutlineColor.w = 1.0f;
+
+    appState.settings.formantColor(&appState.ui.formantColor.x);
+    appState.ui.formantColor.w = 1.0;
+    reformant::ui::setOutlineColor(&appState.ui.formantColor.x,
+                                   &appState.ui.formantOutlineColor.x);
+    appState.ui.formantOutlineColor.w = 1.0f;
 
     appState.ui.isRecording = false;
     appState.ui.isInTimeScrollAnimation = false;
@@ -185,8 +198,7 @@ reformant::Settings instantiateSettings() {
     #include <windows.h>
 
 static inline char* wideToMulti(int codePage, const wchar_t* aw) {
-    const int required =
-        WideCharToMultiByte(codePage, 0, aw, -1, NULL, 0, NULL, NULL);
+    const int required = WideCharToMultiByte(codePage, 0, aw, -1, NULL, 0, NULL, NULL);
     char* result = new char[required];
     WideCharToMultiByte(codePage, 0, aw, -1, result, required, NULL, NULL);
     return result;

@@ -1,6 +1,8 @@
 ---
 BasedOnStyle: Google
 IndentWidth: 4
+ColumnLimit: 90
 IndentPPDirectives: BeforeHash
+AlignOperands: AlignAfterOperator
 ---
 Language: Cpp

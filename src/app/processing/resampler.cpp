@@ -3,6 +3,7 @@
 #include <speex_resampler.h>
 
 #include <cstdarg>
+#include <cstdio>
 
 using namespace reformant;
 
@@ -70,9 +71,7 @@ void Resampler::skipZeros() {
     }
 }
 
-int Resampler::inputLatency() const {
-    return speex_resampler_get_input_latency(_p->st);
-}
+int Resampler::inputLatency() const { return speex_resampler_get_input_latency(_p->st); }
 
 int Resampler::outputLatency() const {
     return speex_resampler_get_output_latency(_p->st);
@@ -91,8 +90,7 @@ void Resampler::process(std::vector<float>& out, const std::vector<float>& data,
 
     uint32_t ilen = length;
     uint32_t olen;
-    _p->err =
-        speex_resampler_get_expected_output_frame_count(_p->st, ilen, &olen);
+    _p->err = speex_resampler_get_expected_output_frame_count(_p->st, ilen, &olen);
     if (_p->err != 0) {
         throw new ResamplerError("Speex expected output frame count error: %s",
                                  speex_resampler_strerror(_p->err));
@@ -100,8 +98,8 @@ void Resampler::process(std::vector<float>& out, const std::vector<float>& data,
 
     out.resize(olen);
 
-    _p->err = speex_resampler_process_float(_p->st, 0, data.data() + offset,
-                                            &ilen, out.data(), &olen);
+    _p->err = speex_resampler_process_float(_p->st, 0, data.data() + offset, &ilen,
+                                            out.data(), &olen);
     if (_p->err != 0) {
         throw new ResamplerError("Speex process error: %s",
                                  speex_resampler_strerror(_p->err));
@@ -110,8 +108,8 @@ void Resampler::process(std::vector<float>& out, const std::vector<float>& data,
     out.resize(olen);
 }
 
-std::vector<float> Resampler::process(const std::vector<float>& data,
-                                      const int offset, const int length) {
+std::vector<float> Resampler::process(const std::vector<float>& data, const int offset,
+                                      const int length) {
     std::vector<float> out;
     process(out, data, offset, length);
     return out;
@@ -122,8 +120,7 @@ int Resampler::requiredInputFrames(const int outputLength) const {
 
     uint32_t ilen;
     uint32_t olen = outputLength;
-    _p->err =
-        speex_resampler_get_required_input_frame_count(_p->st, olen, &ilen);
+    _p->err = speex_resampler_get_required_input_frame_count(_p->st, olen, &ilen);
     if (_p->err != 0) {
         throw new ResamplerError("Speex required input frame count error: %s",
                                  speex_resampler_strerror(_p->err));
@@ -135,11 +132,9 @@ int Resampler::requiredInputFrames(const int outputLength) const {
 // utils
 
 void Resampler::createResampler() {
-    if (m_isValid)
-        throw new ResamplerError("Can't create same resampler twice");
+    if (m_isValid) throw new ResamplerError("Can't create same resampler twice");
 
-    _p->st =
-        speex_resampler_init(1, m_inputRate, m_outputRate, m_quality, &_p->err);
+    _p->st = speex_resampler_init(1, m_inputRate, m_outputRate, m_quality, &_p->err);
     if (_p->err != 0) {
         throw new ResamplerError("Speex new error: %s",
                                  speex_resampler_strerror(_p->err));

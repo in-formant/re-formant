@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 
-#include "resampler.h"
+#include "../resampler.h"
 
 namespace reformant {
 
@@ -27,6 +27,8 @@ class PitchController {
 
     PitchResults getPitchesForRange(double timeMin, double timeMax, double tpp);
 
+    double getInterpolatedVoicing(double time);
+
    private:
     AppState& appState;
 
@@ -34,7 +36,9 @@ class PitchController {
 
     Resampler m_dsResampler;
 
-    double m_lastTime;
+    int m_lastTime;
+    double m_lastSampleRate;
+
     std::vector<double> m_times;
     std::vector<double> m_pitches;
 

@@ -1,8 +1,8 @@
 #include <array>
 
 #include "../memusage.h"
-#include "../processing/pitchcontroller.h"
-#include "../processing/spectrogramcontroller.h"
+#include "../processing/controller/pitchcontroller.h"
+#include "../processing/controller/spectrogramcontroller.h"
 #include "ui_private.h"
 
 void reformant::ui::audioSettings(AppState& appState) {

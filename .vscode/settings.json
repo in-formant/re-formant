@@ -130,9 +130,5 @@
         "stack": "cpp",
         "typeindex": "cpp",
         "valarray": "cpp"
-    },
-    "lldb.displayFormat": "auto",
-    "lldb.showDisassembly": "auto",
-    "lldb.dereferencePointers": true,
-    "lldb.consoleMode": "commands"
+    }
 }

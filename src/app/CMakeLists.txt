@@ -13,18 +13,44 @@ add_executable(ReFormant
     audiofiles/audiofiles.h
     processing/audiotrack.cpp
     processing/audiotrack.h
-    processing/consumerthread.cpp
-    processing/consumerthread.h
     processing/denoiser.cpp
     processing/denoiser.h
-    processing/pitchcontroller.cpp
-    processing/pitchcontroller.h
-    processing/processingthread.cpp
-    processing/processingthread.h
     processing/resampler.cpp
     processing/resampler.h
-    processing/spectrogramcontroller.cpp
-    processing/spectrogramcontroller.h
+    processing/vector2d.h
+    processing/routines/routines.h
+    processing/routines/autoc.cpp
+    processing/routines/cwindow.cpp
+    processing/routines/dchlsky.cpp
+    processing/routines/dcovlpc.cpp
+    processing/routines/dcwmtrx.cpp
+    processing/routines/dlpcwtd.cpp
+    processing/routines/dlwrtrn.cpp
+    processing/routines/dreflpc.cpp
+    processing/routines/durbin.cpp
+    processing/routines/formant.cpp
+    processing/routines/hwindow.cpp
+    processing/routines/hnwindow.cpp
+    processing/routines/lbpoly.cpp
+    processing/routines/lpc_poles.cpp
+    processing/routines/lpc.cpp
+    processing/routines/lpcbsa.cpp
+    processing/routines/qquad.cpp
+    processing/routines/rwindow.cpp
+    processing/routines/w_covar.cpp
+    processing/routines/w_window.cpp
+    processing/thread/consumerthread.cpp
+    processing/thread/consumerthread.h
+    processing/thread/processingthread.cpp
+    processing/thread/processingthread.h
+    processing/controller/formantcontroller.cpp
+    processing/controller/formantcontroller.h
+    processing/controller/formants.cpp
+    processing/controller/formants.h
+    processing/controller/pitchcontroller.cpp
+    processing/controller/pitchcontroller.h
+    processing/controller/spectrogramcontroller.cpp
+    processing/controller/spectrogramcontroller.h
     readerwriterqueue/atomicops.h
     readerwriterqueue/readerwriterqueue.h
     settings/settings_ini.cpp
@@ -37,6 +63,7 @@ add_executable(ReFormant
     ui/setup_imgui.cpp
     ui/style.cpp
     ui/ui_audiosettings.cpp
+    ui/ui_displaysettings.cpp
     ui/ui_dockspace.cpp
     ui/ui_profiler.cpp
     ui/ui_spectrogram.cpp

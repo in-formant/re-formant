@@ -10,6 +10,7 @@ namespace ui {
 
 void dockspace(AppState& appState);
 void audioSettings(AppState& appState);
+void displaySettings(AppState& appState);
 void profiler(AppState& appState);
 void spectrogram(AppState& appState);
 

@@ -32,6 +32,9 @@ class Settings {
     bool showAudioSettings();
     void setShowAudioSettings(bool bFlag);
 
+    bool showDisplaySettings();
+    void setShowDisplaySettings(bool bFlag);
+
     void spectrumPlotRatios(float ratios[2]);
     void setSpectrumPlotRatios(const float ratios[2]);
 
@@ -49,6 +52,12 @@ class Settings {
 
     double spectrumMaxDb();
     void setSpectrumMaxDb(double db);
+
+    void pitchColor(float rgb[3]);
+    void setPitchColor(const float rgb[3]);
+
+    void formantColor(float rgb[3]);
+    void setFormantColor(const float rgb[3]);
 
     bool doStartRecordingOnLaunch();
     void setStartRecordingOnLaunch(bool bFlag);

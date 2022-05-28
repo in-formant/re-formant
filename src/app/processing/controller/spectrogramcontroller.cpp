@@ -4,8 +4,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "../memusage.h"
-#include "../state.h"
+#include "../../memusage.h"
+#include "../../state.h"
 
 using namespace reformant;
 
@@ -54,21 +54,16 @@ void SpectrogramController::setFftLength(int nfft) {
     m_fftLength = nfft;
     m_fftInput = fftwf_alloc_real(nfft);
     m_fftOutput = fftwf_alloc_real(nfft);
-    m_fftPlan = fftwf_plan_r2r_1d(nfft, m_fftInput, m_fftOutput, FFTW_R2HC,
-                                  FFTW_MEASURE);
+    m_fftPlan = fftwf_plan_r2r_1d(nfft, m_fftInput, m_fftOutput, FFTW_R2HC, FFTW_MEASURE);
 
     m_fftMemo.clear();
 
     m_fftMemoRowCount = 0;
 }
 
-uint64_t SpectrogramController::maxMemoryMemo() const {
-    return m_fftMemoMaxMemory;
-}
+uint64_t SpectrogramController::maxMemoryMemo() const { return m_fftMemoMaxMemory; }
 
-void SpectrogramController::setMaxMemoryMemo(uint64_t mem) {
-    m_fftMemoMaxMemory = mem;
-}
+void SpectrogramController::setMaxMemoryMemo(uint64_t mem) { m_fftMemoMaxMemory = mem; }
 
 void SpectrogramController::forceClear() {
     std::lock_guard lockGuard(m_fftMutex);
@@ -77,8 +72,8 @@ void SpectrogramController::forceClear() {
 }
 
 double SpectrogramController::approxMemoCapacityInSeconds() const {
-    const uint64_t numElem = (m_fftMemoMaxMemory - sizeof(m_fftMemo)) /
-                             sizeof(decltype(m_fftMemo)::size_type);
+    const uint64_t numElem =
+        (m_fftMemoMaxMemory - sizeof(m_fftMemo)) / sizeof(decltype(m_fftMemo)::size_type);
     const uint64_t numFreqs = m_fftLength / 2;
     const double blockRate = appState.audioTrack.sampleRate() / m_fftStride;
     return (numElem / numFreqs) / blockRate;
@@ -128,8 +123,7 @@ void SpectrogramController::updateIfNeeded() {
     const int numBlocks = (trackSamples - m_fftLength) / m_fftStride;
     const int numFreqs = m_fftLength / 2;
 
-    m_fftMemoStartBlock =
-        (int)std::floor(m_fftMemoStartTime * sampleRate / m_fftStride);
+    m_fftMemoStartBlock = (int)std::floor(m_fftMemoStartTime * sampleRate / m_fftStride);
 
     // How many blocks in the memo, accounting for starting block number.
     const int actualNumBlocks = numBlocks - m_fftMemoStartBlock;
@@ -159,8 +153,7 @@ void SpectrogramController::updateIfNeeded() {
             // Blackman
             constexpr double a0 = 0.53836;
 
-            trackSamples[i] *=
-                a0 - (1 - a0) * cos((2 * M_PI * i) / (m_fftLength - 1));
+            trackSamples[i] *= a0 - (1 - a0) * cos((2 * M_PI * i) / (m_fftLength - 1));
         }
 
         // Compute FFT.
@@ -212,12 +205,10 @@ SpectrogramResults SpectrogramController::getSpectrogramForRange(
     const int numBlocks = m_fftMemoRowCount;
 
     // Find the first block index from timeMin (can be out of bounds)
-    const int minBlock =
-        ((int)std::floor(timeMin * blockRate) - m_fftMemoStartBlock);
+    const int minBlock = ((int)std::floor(timeMin * blockRate) - m_fftMemoStartBlock);
 
     // Find the last block index from timeMax (can be out of bounds)
-    const int maxBlock =
-        ((int)std::ceil(timeMax * blockRate) - m_fftMemoStartBlock);
+    const int maxBlock = ((int)std::ceil(timeMax * blockRate) - m_fftMemoStartBlock);
 
     // Find the first block index that's in the FFT memo.
     const int startBlockUndec = std::max(minBlock, 0);

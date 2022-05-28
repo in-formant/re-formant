@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "../audiofiles/audiofiles.h"
-#include "../processing/pitchcontroller.h"
-#include "../processing/spectrogramcontroller.h"
+#include "../processing/controller/pitchcontroller.h"
+#include "../processing/controller/spectrogramcontroller.h"
 #include "ui_private.h"
 
 void reformant::ui::dockspace(AppState& appState) {
@@ -39,8 +39,7 @@ void reformant::ui::dockspace(AppState& appState) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New", "CTRL+N", nullptr)) {
                 std::lock_guard trackGuard(appState.audioTrack.mutex());
-                if (appState.audioOutput.isPlaying())
-                    appState.audioOutput.stopPlaying();
+                if (appState.audioOutput.isPlaying()) appState.audioOutput.stopPlaying();
                 appState.audioTrack.reset();
                 appState.spectrogramController->setTime(0);
                 appState.spectrogramController->forceClear();
@@ -63,8 +62,9 @@ void reformant::ui::dockspace(AppState& appState) {
         }
 
         if (ImGui::BeginMenu("Options")) {
-            ImGui::MenuItem("Audio settings", nullptr,
-                            &appState.ui.showAudioSettings);
+            ImGui::MenuItem("Audio settings", nullptr, &appState.ui.showAudioSettings);
+            ImGui::MenuItem("Display settings", nullptr,
+                            &appState.ui.showDisplaySettings);
             ImGui::MenuItem("Profiler", nullptr, &appState.ui.showProfiler);
 
             ImGui::EndMenu();
@@ -76,8 +76,7 @@ void reformant::ui::dockspace(AppState& appState) {
 
     if (ifd::FileDialog::Instance().IsDone("AudioFileOpenDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
-            const auto filePath =
-                ifd::FileDialog::Instance().GetResult().string();
+            const auto filePath = ifd::FileDialog::Instance().GetResult().string();
 
             std::vector<float> data;
             int sampleRate;
@@ -94,21 +93,17 @@ void reformant::ui::dockspace(AppState& appState) {
 
     if (ifd::FileDialog::Instance().IsDone("AudioFileSaveDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
-            const auto filePath =
-                ifd::FileDialog::Instance().GetResult().string();
-            const size_t formatIndex =
-                ifd::FileDialog::Instance().GetSelectedFilter();
+            const auto filePath = ifd::FileDialog::Instance().GetResult().string();
+            const size_t formatIndex = ifd::FileDialog::Instance().GetSelectedFilter();
 
             appState.audioTrack.mutex().lock();
             const auto data = appState.audioTrack.data();
             appState.audioTrack.mutex().unlock();
 
-            const auto formats =
-                audiofiles::getCompatibleFormats(trackSampleRate);
+            const auto formats = audiofiles::getCompatibleFormats(trackSampleRate);
             const auto& format = formats[formatIndex];
 
-            if (audiofiles::writeFile(filePath, format, data,
-                                      trackSampleRate)) {
+            if (audiofiles::writeFile(filePath, format, data, trackSampleRate)) {
             }
         }
         std::cout << "audio file write filter: "

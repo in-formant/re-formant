@@ -1,5 +1,5 @@
 #include "../memusage.h"
-#include "../processing/processingthread.h"
+#include "../processing/thread/processingthread.h"
 #include "ui_private.h"
 
 void reformant::ui::profiler(AppState& appState) {
