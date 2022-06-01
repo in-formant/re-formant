@@ -10,7 +10,7 @@ int dchlsky(std::vector<double>& a, int n, std::vector<double>& t, double* det) 
         for (int j = 0; j <= i; j += n) {
             double sm = a[k];
             for (int l = i; l < k; ++l) {
-                sm -= a[l] * a[j + l];
+                sm -= a[l] * a[j + l - i];
             }
             if (i == j) {
                 if (sm <= 0.) return m;

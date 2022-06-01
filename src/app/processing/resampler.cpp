@@ -81,6 +81,11 @@ void Resampler::process(std::vector<float>& out, const std::vector<float>& data,
                         const int offset, int length) {
     if (!m_isValid) throw new ResamplerError("Resampler is invalid");
 
+    if (data.empty()) {
+        out.clear();
+        return;
+    }
+
     if (offset < 0 || offset >= data.size())
         throw new ResamplerError("Input vector offset out of bounds");
 

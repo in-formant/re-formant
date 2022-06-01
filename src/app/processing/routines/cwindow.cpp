@@ -1,6 +1,6 @@
 #include "routines.h"
 
-void cwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void cwindow(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
              double preEmphasis) {
     static std::vector<double> wind;
 
@@ -16,12 +16,11 @@ void cwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int
 
     if (preEmphasis != 0.) {
         for (int i = 0; i < n; ++i) {
-            out[i] =
-                wind[i] * (double(in[ioff + i + 1]) - preEmphasis * double(in[ioff + i]));
+            out[i] = wind[i] * (in[ioff + i + 1] - preEmphasis * in[ioff + i]);
         }
     } else {
         for (int i = 0; i < n; ++i) {
-            out[i] = wind[i] * double(in[ioff + i]);
+            out[i] = wind[i] * in[ioff + i];
         }
     }
 }

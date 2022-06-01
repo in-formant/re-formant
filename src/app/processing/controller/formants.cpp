@@ -38,7 +38,7 @@ static constexpr bool w_verbose = false;
 /* Here are the major fudge factors for tweaking the formant tracker. */
 
 /* maximum number of candidate mappings allowed */
-static constexpr int MAXCAN = 300;
+static constexpr int MAXCAN = 600;
 
 /* equivalent delta-Hz cost for missing formant */
 static constexpr double MISSING = 1;
@@ -66,7 +66,7 @@ static constexpr double F_MERGE = 2000.0;
 
 // -- Algorithm
 
-FormantTracking::FormantTracking(int nform, double nomF1)
+FormantTracking::FormantTracking(int nForm, double nomF1)
     : nForm(nForm),
       nomF1(nomF1),
       fnom({500, 1500, 2500, 3500, 4500, 5500, 6500}),
@@ -134,11 +134,10 @@ void FormantTracking::setNominalFreqs(double f1) {
 }
 
 double FormantTracking::getStatMax(const PoleArray& ps) {
-    double amax = ps.pole[0].rms;
-    double t;
+    double amax = std::numeric_limits<double>::lowest();
 
-    for (int i = 1; i < ps.pole.size(); ++i) {
-        t = ps.pole[i].rms;
+    for (int i = 0; i < ps.pole.size(); ++i) {
+        const double t = ps.pole[i].rms;
         if (t > amax) amax = t;
     }
 
@@ -326,6 +325,7 @@ FormantTrack FormantTracking::track(const PoleArray& ps) {
 
     for (int i = 0; i < ps.length; ++i) {
         for (int j = 0; j < nForm; ++j) {
+            track.form(j, i).offset = ps.pole.at(i).offset;
             track.form(j, i).freq = fr(j, i);
             track.form(j, i).band = ba(j, i);
         }

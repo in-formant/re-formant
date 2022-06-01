@@ -2,7 +2,7 @@
 
 #include "routines.h"
 
-void w_window(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void w_window(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
               double preEmphasis, WindowType type) {
     switch (type) {
         case WINDOW_RECTANGULAR:

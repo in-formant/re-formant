@@ -9,10 +9,9 @@ void dcwmtrx(const std::vector<double>& s, int ni, int nl, int np,
     }
 
     for (int i = 0; i < np; ++i) {
-        int k = nl - i;
         shi[i] = 0.;
         for (int j = 0; j < nl - ni; ++j) {
-            shi[i] += s[ni + j] * s[k + j - 1] * w[j];
+            shi[i] += s[ni + j] * s[ni - i + j - 1] * w[j];
         }
     }
 

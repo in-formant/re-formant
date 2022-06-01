@@ -1,6 +1,6 @@
 #include "routines.h"
 
-bool w_covar(const std::vector<int>& xx, int xoff, int* m, int n, int istrt,
+bool w_covar(const std::vector<double>& xx, int xoff, int* m, int n, int istrt,
              std::vector<double>& y, double* alpha, double* r0, double preEmphasis,
              WindowType windowType)
 

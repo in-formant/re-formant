@@ -64,15 +64,15 @@ class vector2d {
     }
 
    private:
-    inline void boundCheck(const int i, const int j) {
+    inline void boundCheck(const int i, const int j) const {
         if (i < 0 || i >= m_rows) throw std::domain_error("Row index out of bounds");
         if (j < 0 || j >= m_cols) throw std::domain_error("Column index out of bounds");
     }
 
-    inline int index(const int i, const int j) { return i * m_cols + j; }
+    inline int index(const int i, const int j) const { return i * m_cols + j; }
 
     inline T& at(const int i, const int j) { return m_array[index(i, j)]; }
-    inline const T& at(const int i, const int j) const { m_array[index(i, j)]; }
+    inline const T& at(const int i, const int j) const { return m_array[index(i, j)]; }
 
     int m_rows;
     int m_cols;

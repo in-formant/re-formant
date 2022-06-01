@@ -17,7 +17,7 @@ bool lbpoly(std::vector<double>& a, int order, std::vector<double>& rootr,
     /* Rootr and rooti are assumed to contain starting points for the root
        search on entry to lbpoly(). */
 
-    const double lim0 = 0.5 * sqrt(DBL_MAX);
+    const double lim0 = 0.5 * sqrt(std::numeric_limits<double>::max());
 
     std::vector<double> b(order + 1);
     std::vector<double> c(order + 1);

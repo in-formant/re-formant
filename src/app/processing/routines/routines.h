@@ -52,19 +52,19 @@ PoleArray lpc_poles(const std::vector<double>& data, double sampleRate,
 
 void dpform(const std::vector<Pole>& poles, int nform, double nomF1);
 
-void rwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void rwindow(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
              double preEmphasis);
 
-void hwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void hwindow(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
              double preEmphasis);
 
-void cwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void cwindow(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
              double preEmphasis);
 
-void hnwindow(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void hnwindow(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
               double preEmphasis);
 
-void w_window(const std::vector<int>& in, int ioff, std::vector<double>& out, int n,
+void w_window(const std::vector<double>& in, int ioff, std::vector<double>& out, int n,
               double preEmphasis, WindowType type);
 
 void autoc(int windowSize, const std::vector<double>& s, int p, std::vector<double>& r,
@@ -73,14 +73,14 @@ void autoc(int windowSize, const std::vector<double>& s, int p, std::vector<doub
 void durbin(const std::vector<double>& r, std::vector<double>& k, std::vector<double>& a,
             int p, double* ex);
 
-bool lpc(int np, double lpcStabl, int wind, const std::vector<int>& data, int dataOff,
+bool lpc(int np, double lpcStabl, int wind, const std::vector<double>& data, int dataOff,
          std::vector<double>& lpc, double* energy, double preEmphasis,
          WindowType windowType);
 
-bool lpcbsa(int np, double lpcStabl, int wind, const std::vector<int>& data, int dataOff,
-            std::vector<double>& lpc, double* energy, double preEmphasis);
+bool lpcbsa(int np, double lpcStabl, int wind, const std::vector<double>& data,
+            int dataOff, std::vector<double>& lpc, double* energy, double preEmphasis);
 
-bool w_covar(const std::vector<int>& data, int dataOff, int* m, int n, int istrt,
+bool w_covar(const std::vector<double>& data, int dataOff, int* m, int n, int istrt,
              std::vector<double>& y, double* alpha, double* r0, double preEmphasis,
              WindowType windowType);
 

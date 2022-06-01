@@ -5,9 +5,6 @@ bool formant(int lpcOrder, double sFreq, std::vector<double>& lpca, int* nForm,
     std::vector<double> rr(lpcOrder + 1);
     std::vector<double> ri(lpcOrder + 1);
 
-    freq.clear();
-    band.clear();
-
     if (init) { /* set up starting points for the root search near unit circle */
         const double x = M_PI / (lpcOrder + 1);
         for (int i = 0; i <= lpcOrder; ++i) {

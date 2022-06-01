@@ -5,14 +5,14 @@
 #include <iostream>
 
 #include "../../state.h"
+#include "../controller/formantcontroller.h"
 #include "../controller/pitchcontroller.h"
 #include "../controller/spectrogramcontroller.h"
 
 using namespace std::chrono;
 using namespace reformant;
 
-ProcessingThread::ProcessingThread(AppState& appState,
-                                   const int approxProcessingDelayMs)
+ProcessingThread::ProcessingThread(AppState& appState, const int approxProcessingDelayMs)
     : appState(appState),
       m_approxProcessingDelayMs(approxProcessingDelayMs),
       m_isRunning(false),
@@ -36,6 +36,7 @@ void ProcessingThread::run() {
     while (m_isRunning) {
         appState.spectrogramController->updateIfNeeded();
         appState.pitchController->updateIfNeeded();
+        appState.formantController->updateIfNeeded();
 
         // Wait until the appropriate duration has elapsed.
         const auto now = steady_clock::now();
@@ -47,8 +48,8 @@ void ProcessingThread::run() {
                 milliseconds(m_approxProcessingDelayMs - elapsed));
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
-            std::cout << "Processing took longer than "
-                      << m_approxProcessingDelayMs << " ms" << std::endl;
+            std::cout << "Processing took longer than " << m_approxProcessingDelayMs
+                      << " ms" << std::endl;
         }
 
         lastTime = steady_clock::now();

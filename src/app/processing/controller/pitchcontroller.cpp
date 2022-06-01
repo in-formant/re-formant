@@ -28,6 +28,7 @@ PitchController::PitchController(AppState& appState)
     : appState(appState),
       m_dsResampler(4),
       m_lastTime(0),
+      m_lastSampleRate(-1),
       m_minSilenceRunLength(0),
       m_minVoicingRunLength(0),
       m_pitchBuffer(std::max(m_minSilenceRunLength, m_minVoicingRunLength) + 1,

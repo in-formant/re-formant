@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "audio/setup_audio.h"
+#include "processing/controller/formantcontroller.h"
 #include "processing/controller/pitchcontroller.h"
 #include "processing/controller/spectrogramcontroller.h"
 #include "processing/thread/consumerthread.h"
@@ -46,6 +47,9 @@ int main(int argc, char* argv[]) {
 
     reformant::PitchController pitchController(appState);
     appState.pitchController = &pitchController;
+
+    reformant::FormantController formantController(appState);
+    appState.formantController = &formantController;
 
     appState.ui.showAudioSettings = appState.settings.showAudioSettings();
     appState.ui.showDisplaySettings = appState.settings.showDisplaySettings();

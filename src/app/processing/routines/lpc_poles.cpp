@@ -21,25 +21,20 @@ PoleArray lpc_poles(const std::vector<double>& data, double sampleRate,
     const int step = (int)(.5 + (frameInterval * sampleRate));
 
     const int length = data.size();
+
     const int numFrames =
-        1 + (int)((length / sampleRate - windowDuration) / frameInterval);
+        (int)(((double)length / sampleRate - windowDuration) / frameInterval);
 
     if (numFrames >= 1) {
         const double lpcStabl = 70.0;
         double energy;
-        std::vector<double> lpca(lpcOrder);
+        std::vector<double> lpca(lpcOrder + 1);
 
         std::vector<Pole> pole(numFrames);
-        std::vector<int> data(length);
-        for (int i = 0; i < length; ++i) {
-            data[i] = (int)data[i];
-        }
         bool init = true;
         int dataOff = 0;
         for (int j = 0; j < numFrames; ++j, dataOff += step) {
             pole[j].offset = dataOff;
-            pole[j].freq.resize(lpcOrder);
-            pole[j].band.resize(lpcOrder);
 
             switch (lpcType) {
                 case LPC_AUTOC:

@@ -8,8 +8,8 @@ static std::random_device rd;
 static std::mt19937 gen(rd());
 static std::uniform_real_distribution<> distrib(-1.0, 1.0);
 
-bool lpcbsa(int np, double lpcStabl, int wind, const std::vector<int>& data, int dataOff,
-            std::vector<double>& lpc, double* energy, double preEmphasis) {
+bool lpcbsa(int np, double lpcStabl, int wind, const std::vector<double>& data,
+            int dataOff, std::vector<double>& lpc, double* energy, double preEmphasis) {
     static std::vector<double> w;
 
     if (w.size() != wind) {
@@ -26,7 +26,7 @@ bool lpcbsa(int np, double lpcStabl, int wind, const std::vector<int>& data, int
 
     std::vector<double> sig(wind);
     for (int i = 0; i < wind; ++i) {
-        sig[i] = data[i] + .016 * distrib(gen) - .008;
+        sig[i] = data[dataOff + i] + .016 * distrib(gen) - .008;
     }
     for (int i = 1; i < wind; ++i) {
         sig[i - 1] = sig[i] - preEmphasis * sig[i - 1];
