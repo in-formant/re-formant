@@ -18,7 +18,7 @@ FormantController::FormantController(AppState& appState)
       m_dsResampler(4),
       m_lastTime(0),
       m_lastSampleRate(-1),
-      m_tracking(4, -10.0) {}
+      m_tracking(3, -10) {}
 
 void FormantController::forceClear(bool lock) {
     if (lock) m_mutex.lock();
@@ -110,7 +110,7 @@ void FormantController::updateIfNeeded() {
     for (auto& x : s) x *= std::numeric_limits<int16_t>::max();
 
     const auto ps = lpc_poles(s, Fds, windowDuration, frameIntervalTime, 12, 0.97,
-                              LPC_AUTOC, WINDOW_COS4);
+                              LPC_COVAR, WINDOW_COS4);
 
     const auto track = m_tracking.track(ps);
     // track.form : (nForm, ps.length)

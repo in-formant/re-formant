@@ -304,7 +304,7 @@ FormantTrack FormantTracking::track(const PoleArray& ps) {
                         fr(j, i) = fr(j, i + 1); /* replicate backwards */
                         ba(j, i) = ba(j, i + 1);
                     } else {
-                        fr(j, i) = fnom[j]; /* or insert neutral values */
+                        fr(j, i) = -1000.0;  // fnom[j]; /* or insert neutral values */
                         ba(j, i) = NOBAND;
                     }
                 }
@@ -312,7 +312,7 @@ FormantTrack FormantTracking::track(const PoleArray& ps) {
             minCan = fl[i].prept[minCan];
         } else { /* if no candidates, fake with "nominal" frequencies. */
             for (int j = 0; j < nForm; ++j) {
-                fr(j, i) = fnom[j];
+                fr(j, i) = -1000.0;  // fnom[j];
                 ba(j, i) = NOBAND;
             }
         } /* note that mincan will remain =-1 if no candidates */
