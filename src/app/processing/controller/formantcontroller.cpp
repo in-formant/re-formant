@@ -109,6 +109,7 @@ void FormantController::updateIfNeeded() {
     std::vector<double> s(ds.begin(), ds.end());
     for (auto& x : s) x *= std::numeric_limits<int16_t>::max();
 
+    /// TODO: fix LPC_BSA not working.
     const auto ps = lpc_poles(s, Fds, windowDuration, frameIntervalTime, 12, 0.97,
                               LPC_COVAR, WINDOW_COS4);
 
