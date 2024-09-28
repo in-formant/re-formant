@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13...3.22 FATAL_ERROR)
 
-project(ReFormant LANGUAGES C CXX ASM)
+project(ReFormant LANGUAGES C CXX)
 set(PROJECT_VERSION 0.1-alpha.0)
 
 set(CMAKE_CXX_STANDARD 20)

@@ -28,7 +28,6 @@ add_executable(ReFormant
         processing/routines/dlwrtrn.cpp
         processing/routines/dreflpc.cpp
         processing/routines/durbin.cpp
-        processing/routines/eckf_pitch.cpp
         processing/routines/formant.cpp
         processing/routines/hwindow.cpp
         processing/routines/hnwindow.cpp
