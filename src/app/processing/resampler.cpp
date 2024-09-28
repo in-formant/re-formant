@@ -3,6 +3,7 @@
 #include <speex_resampler.h>
 
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 
 using namespace reformant;
@@ -90,7 +91,7 @@ void Resampler::process(std::vector<float>& out, const std::vector<float>& data,
         throw new ResamplerError("Input vector offset out of bounds");
 
     if (length < 0) {
-        length = (int)data.size() - offset;
+        length = static_cast<int>(data.size()) - offset;
     }
 
     uint32_t ilen = length;
@@ -131,7 +132,7 @@ int Resampler::requiredInputFrames(const int outputLength) const {
                                  speex_resampler_strerror(_p->err));
     }
 
-    return (int)ilen;
+    return static_cast<int>(ilen);
 }
 
 // utils

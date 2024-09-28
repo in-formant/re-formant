@@ -1,11 +1,12 @@
 #include "audiotrack.h"
 
 #include <cmath>
-#include <iostream>
+#include <algorithm>
 
 using namespace reformant;
 
-AudioTrack::AudioTrack() : m_sampleRate(0) {}
+AudioTrack::AudioTrack() : m_sampleRate(0) {
+}
 
 void AudioTrack::append(const std::vector<float>& chunk, const double fsIn) {
     const double fsOut = m_sampleRate;
@@ -57,7 +58,7 @@ std::vector<float> AudioTrack::data(const int offset, int length) {
     }
 
     std::vector<float> copy(length);
-    std::copy(m_track.begin() + offset, m_track.begin() + offset + length, copy.begin());
+    std::copy_n(m_track.begin() + offset, length, copy.begin());
 
     return copy;
 }

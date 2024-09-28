@@ -10,8 +10,10 @@ int dcovlpc(std::vector<double>& p, const std::vector<double>& s, std::vector<do
     int m = dchlsky(p, n, c, &d);
     dlwrtrn(p, n, c, s);
 
+    const int nm = n * m;
+
     m = 0;
-    for (int i = 0; i < n * m; i += n + 1) {
+    for (int i = 0; i < nm; i += n + 1) {
         if (p[i] < thres) break;
         m++;
     }
@@ -27,12 +29,13 @@ int dcovlpc(std::vector<double>& p, const std::vector<double>& s, std::vector<do
         if (ee < ps1) std::cerr << "covlpc is losing accuracy" << std::endl;
         a[l] = sqrt(ee);
     }
-    c[l] /= sqrt(ps);
+    m = l;
+    c[0] = -c[0] / sqrt(ps);
     for (int i = 1; i < m; ++i) {
         c[i] = -c[i] / a[i - 1];
     }
     dreflpc(c, a, m);
-    for (int i = m + 1; i < n; ++i) {
+    for (int i = m + 1; i <= n; ++i) {
         a[i] = 0.;
     }
     return m;

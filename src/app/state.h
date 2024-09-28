@@ -13,11 +13,12 @@
 struct GLFWwindow;
 
 namespace reformant {
-
-class SpectrogramController;
 class PitchController;
 class FormantController;
+class SpectrogramController;
+class WaveformController;
 class ProcessingThread;
+class VisualisationThread;
 
 struct UiState {
     // global
@@ -61,13 +62,14 @@ struct AppState {
 
     AudioTrack audioTrack;
 
-    SpectrogramController* spectrogramController;
     PitchController* pitchController;
     FormantController* formantController;
+    SpectrogramController* spectrogramController;
+    WaveformController* waveformController;
 
     ProcessingThread* processingThread;
+    VisualisationThread* visualisationThread;
 };
-
-}  // namespace reformant
+} // namespace reformant
 
 #endif  // REFORMANT_STATE_H

@@ -20,7 +20,8 @@ SpectrogramController::SpectrogramController(AppState& appState)
       m_fftMemoMaxMemory(1024_u64 * 1024_u64 * 256_u64),
       m_fftMemoStartTime(0.0),
       m_fftMemoRowCount(0),
-      m_lastSpecRequestTimeMin(0.0) {}
+      m_needSpecUpdate(false) {
+}
 
 SpectrogramController::~SpectrogramController() {
     if (m_fftPlan != nullptr) fftwf_destroy_plan(m_fftPlan);
@@ -63,7 +64,10 @@ void SpectrogramController::setFftLength(int nfft) {
 
 uint64_t SpectrogramController::maxMemoryMemo() const { return m_fftMemoMaxMemory; }
 
-void SpectrogramController::setMaxMemoryMemo(uint64_t mem) { m_fftMemoMaxMemory = mem; }
+void SpectrogramController::setMaxMemoryMemo(uint64_t mem) {
+    m_fftMemoMaxMemory = mem;
+    m_fftMemo.reserve(mem / sizeof(decltype(m_fftMemo)::size_type));
+}
 
 void SpectrogramController::forceClear() {
     std::lock_guard lockGuard(m_fftMutex);
@@ -80,8 +84,7 @@ double SpectrogramController::approxMemoCapacityInSeconds() const {
 }
 
 uint64_t SpectrogramController::bytesUsedByMemo() {
-    return sizeof(m_fftMemo) +
-           m_fftMemo.capacity() * sizeof(decltype(m_fftMemo)::size_type);
+    return m_fftMemo.capacity() * sizeof(decltype(m_fftMemo)::size_type);
 }
 
 void SpectrogramController::updateIfNeeded() {
@@ -89,7 +92,7 @@ void SpectrogramController::updateIfNeeded() {
 
     // Just return if we couldn't lock, this isn't important because it's
     // ran periodically, and it avoids a potential deadlock.
-    std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
+    const std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
     if (!trackLock.owns_lock()) return;
 
     std::lock_guard fftGuard(m_fftMutex);
@@ -103,7 +106,12 @@ void SpectrogramController::updateIfNeeded() {
         m_fftMemoRowCount = 0;
 
         // Set the starting time related to the last requested time.
-        m_fftMemoStartTime = std::max(0.0, m_lastSpecRequestTimeMin - 10.0);
+        m_fftMemoStartTime = std::max(0.0, m_specTimeMin - 10.0);
+    }
+
+    if (m_needSpecUpdate) {
+        updateSpectrogramResults();
+        m_needSpecUpdate = false;
     }
 
     // The FFT memo is a series of blocks of (NFFT/2)-length spectra,
@@ -114,16 +122,18 @@ void SpectrogramController::updateIfNeeded() {
     const double sampleRate = appState.audioTrack.sampleRate();
 
     // Track length in samples.
-    const int trackSamples = appState.audioTrack.sampleCount();
+    const int trackSampleCount = appState.audioTrack.sampleCount();
 
     // Stride size in samples.
-    m_fftStride = (int)std::round(10.0 / 1000.0 * sampleRate);
+    m_fftStride = m_fftLength / 4;
+    //m_fftStride = static_cast<int>(std::round(20.0 / 1000.0 * sampleRate));
 
     // How many blocks we're expecting for this given stride.
-    const int numBlocks = (trackSamples - m_fftLength) / m_fftStride;
+    const int numBlocks = (trackSampleCount - m_fftLength) / m_fftStride;
     const int numFreqs = m_fftLength / 2;
 
-    m_fftMemoStartBlock = (int)std::floor(m_fftMemoStartTime * sampleRate / m_fftStride);
+    m_fftMemoStartBlock = static_cast<int>(std::floor(
+        m_fftMemoStartTime * sampleRate / m_fftStride));
 
     // How many blocks in the memo, accounting for starting block number.
     const int actualNumBlocks = numBlocks - m_fftMemoStartBlock;
@@ -149,11 +159,18 @@ void SpectrogramController::updateIfNeeded() {
         auto trackSamples = appState.audioTrack.data(index, m_fftLength);
 
         // Apply windowing.
+        const int N = m_fftLength - 1;
         for (int i = 0; i < m_fftLength; ++i) {
-            // Blackman
-            constexpr double a0 = 0.53836;
+            // Blackman-Nuttall
+            constexpr double a0 = 0.3635819;
+            constexpr double a1 = 0.4891775;
+            constexpr double a2 = 0.1365995;
+            constexpr double a3 = 0.0106411;
 
-            trackSamples[i] *= a0 - (1 - a0) * cos((2 * M_PI * i) / (m_fftLength - 1));
+            const double wk = a0 - a1 * cos((2 * M_PI * i) / N) +
+                              a2 * cos((4 * M_PI * i) / N) - a3 * cos((6 * M_PI * i) / N);
+
+            trackSamples[i] = static_cast<float>(trackSamples[i] * wk);
         }
 
         // Compute FFT.
@@ -166,37 +183,54 @@ void SpectrogramController::updateIfNeeded() {
             const double imag = (i > 0) ? m_fftOutput[m_fftLength - 1 - i] : 0;
             const double mag = real * real + imag * imag;
 
-            m_fftMemo[i + slice * numFreqs] = mag;
+            const double magDb = 20.0 * log10(mag <= 0 ? DBL_EPSILON : mag);
+
+            m_fftMemo[i + slice * numFreqs] = static_cast<float>(magDb);
         }
     }
 }
 
-SpectrogramResults SpectrogramController::getSpectrogramForRange(
+const SpectrogramResults& SpectrogramController::getSpectrogramForRange(
     const double timeMin, const double timeMax, const double timePerPixel) {
+    // This method will be called from the UI thread, we don't want that.
+    // So let's queue updating results with those parameters so it gets recalculated on updateIfNeeded.
+
     std::lock_guard lockGuard(m_fftMutex);
 
-    SpectrogramResults spec;
+    // Extend by some windows on each side.
+    const double sampleRate = appState.audioTrack.sampleRate();
+    const double oneWindow = m_fftLength / sampleRate;
+
+    m_needSpecUpdate = true;
+    m_specTimeMin = timeMin - 4 * oneWindow;
+    m_specTimeMax = timeMax + 4 * oneWindow;
+    m_specTimePerPixel = timePerPixel;
+
+    return m_specResults;
+}
+
+void SpectrogramController::updateSpectrogramResults() {
+    auto& spec = m_specResults;
+    const double timeMin = m_specTimeMin;
+    const double timeMax = m_specTimeMax;
+    const double timePerPixel = m_specTimePerPixel;
 
     // Track sample rate.
     const double sampleRate = appState.audioTrack.sampleRate();
+
+    // Half-window in seconds.
+    const double halfWindow = (.5 * m_fftLength) / sampleRate;
 
     // Set the frequency limits.
     spec.freqMin = 1 / sampleRate;
     spec.freqMax = sampleRate / 2;
     spec.numFreqs = m_fftLength / 2;
 
-    // Store the last requested timeMin to inform a potential memo
-    // reallocation.
-    m_lastSpecRequestTimeMin = timeMin;
-
-    // Track length in samples.
-    const int trackSamples = appState.audioTrack.sampleCount();
-
     // Stride size in seconds.
     const double stride = m_fftStride / sampleRate;
 
     // Find integer multiple to downsample per timePerPixel.
-    const int dsMult = std::max(1, (int)std::floor(timePerPixel / stride) - 1);
+    const int dsMult = std::max(1, static_cast<int>(std::ceil(timePerPixel / stride)));
 
     // Stride size in samples.
     const double blockRate = sampleRate / m_fftStride;
@@ -222,41 +256,35 @@ SpectrogramResults SpectrogramController::getSpectrogramForRange(
         spec.timeMin = 0;
         spec.timeMax = 0;
         spec.numSlices = 0;
-        return spec;
+        return;
     }
 
-    // Set the time limits.
-    spec.timeMin = (startBlock + m_fftMemoStartBlock) / blockRate;
-    spec.timeMax = (endBlock + m_fftMemoStartBlock) / blockRate;
+    // Set the time limits. Shift them to align the middle.
+    spec.timeMin = (startBlock + m_fftMemoStartBlock) / blockRate + halfWindow;
+    spec.timeMax = (endBlock + m_fftMemoStartBlock) / blockRate + halfWindow;
 
     // Number of blocks (slices) in the requested data.
     spec.numSlices = (endBlock - startBlock) / dsMult;
 
-    // Initialize the data to zero.
-    spec.data.resize(spec.numSlices * spec.numFreqs, 0.0);
+    // Resize.
+    spec.data.resize(spec.numSlices * spec.numFreqs);
+    spec.dataColMajor.resize(spec.numSlices * spec.numFreqs);
 
-    // Copy the data from col-major FFT memo to row-major result array.
-    int slice = 0;
+    // Copy the data from FFT memo to result array.
     int block = startBlock;
 
-    while (block < endBlock) {
-        for (int i = 0; i < spec.numFreqs; ++i) {
-            const int index = (spec.numFreqs - 1 - i) * spec.numSlices + slice;
-            // Fill with zeroes if not in memo.
-            const int memoIndex = i + block * spec.numFreqs;
-            if (memoIndex < m_fftMemo.size()) {
-                spec.data[index] = m_fftMemo[memoIndex];
-            } else {
-                spec.data[index] = 0;
-            }
-        }
-        ++slice;
+    for (int slice = 0; slice < spec.numSlices; ++slice) {
+        const int memoIndex = block * spec.numFreqs;
+
+        std::copy_n(m_fftMemo.begin() + memoIndex, spec.numFreqs,
+                    spec.dataColMajor.begin() + slice * spec.numFreqs);
         block += dsMult;
     }
 
-    for (auto& mag : spec.data) {
-        mag = 20.0 * log10(mag <= 0 ? DBL_EPSILON : mag);
+    for (int i = 0; i < spec.numFreqs; ++i) {
+        for (int slice = 0; slice < spec.numSlices; ++slice) {
+            spec.data[slice + i * spec.numSlices] = spec.dataColMajor[
+                i + slice * spec.numFreqs];
+        }
     }
-
-    return spec;
 }

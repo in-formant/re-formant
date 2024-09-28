@@ -9,7 +9,7 @@ using namespace reformant;
 
 namespace {
 void iniRead(const std::string& appName, SettingsMap& map) {
-    mINI::INIFile file(appName + ".ini");
+    const mINI::INIFile file(appName + ".ini");
     mINI::INIStructure ini;
 
     if (!file.read(ini)) {
@@ -32,7 +32,7 @@ void iniRead(const std::string& appName, SettingsMap& map) {
 }
 
 void iniWrite(const std::string& appName, const SettingsMap& map) {
-    mINI::INIFile file(appName + ".ini");
+    const mINI::INIFile file(appName + ".ini");
     mINI::INIStructure ini;
 
     // create section
@@ -44,7 +44,6 @@ void iniWrite(const std::string& appName, const SettingsMap& map) {
 
     if (!file.generate(ini, true)) {
         std::cerr << "Failed to write INI file." << std::endl;
-        return;
     }
 }
 }  // namespace

@@ -8,7 +8,7 @@ namespace reformant {
 
 struct DenoiserPrivate;
 
-class Denoiser {
+class Denoiser final {
    public:
     Denoiser();
     virtual ~Denoiser();
@@ -19,7 +19,7 @@ class Denoiser {
     DenoiserPrivate* _p;
 };
 
-class DenoiserError : std::exception {
+class DenoiserError final : std::exception {
    public:
     DenoiserError(const char* msg);
     const char* what() const noexcept override;

@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "memusage.h"
 
 #include <stdexcept>
 #include <string>
@@ -10,7 +11,8 @@ using namespace reformant;
 static constexpr auto appName = "ReFormant";
 
 static constexpr auto keyShowAudioSettings = "show_audio_settings";
-static constexpr auto keyShowDisplaySettings = "show_display_settings";
+static constexpr auto keyShowDisplaySettings = "show_display_settings";;
+static constexpr auto keyShowProfiler = "show_profiler";
 static constexpr auto keyPlotRatioSpectrogram = "plot_ratio_spectrogram";
 static constexpr auto keyPlotRatioWaveform = "plot_ratio_waveform";
 static constexpr auto keySpectrumFreqScale = "spectrum_freq_scale";
@@ -27,6 +29,7 @@ static constexpr auto keyInputDeviceName = "audio_input_device_name";
 static constexpr auto keyOutputDeviceName = "audio_output_device_name";
 static constexpr auto keyTrackSampleRate = "track_sample_rate";
 static constexpr auto keyFftLength = "fft_length";
+static constexpr auto keySpectrogramMemory = "spectrogram_memory";
 
 static const std::string suffixRed = "_r";
 static const std::string suffixGreen = "_g";
@@ -37,17 +40,30 @@ static const std::string suffixBlue = "_b";
 namespace {
 // Setters return true if the entry was actually changed.
 bool mapBoolGet(SettingsMap& map, const std::string& key, bool bDefault);
+
 bool mapBoolSet(SettingsMap& map, const std::string& key, bool value);
+
 int mapIntGet(SettingsMap& map, const std::string& key, int nDefault);
+
 bool mapIntSet(SettingsMap& map, const std::string& key, int value);
+
+uint64_t mapU64Get(SettingsMap& map, const std::string& key, uint64_t nDefault);
+
+bool mapU64Set(SettingsMap& map, const std::string& key, uint64_t value);
+
 float mapFloatGet(SettingsMap& map, const std::string& key, float fDefault);
+
 bool mapFloatSet(SettingsMap& map, const std::string& key, float value);
+
 double mapDoubleGet(SettingsMap& map, const std::string& key, double fDefault);
+
 bool mapDoubleSet(SettingsMap& map, const std::string& key, double value);
+
 std::string mapStrGet(SettingsMap& map, const std::string& key,
                       const std::string& sDefault);
+
 bool mapStrSet(SettingsMap& map, const std::string& key, const std::string& value);
-}  // namespace
+} // namespace
 
 // -- class definitions.
 
@@ -82,6 +98,15 @@ void Settings::setShowDisplaySettings(bool bFlag) {
     save();
 }
 
+bool Settings::showProfiler() {
+    return save(mapBoolGet(m_map, keyShowProfiler, false));
+}
+
+void Settings::setShowProfiler(bool bFlag) {
+    mapBoolSet(m_map, keyShowProfiler, bFlag);
+    save();
+}
+
 void Settings::spectrumPlotRatios(float ratios[2]) {
     ratios[0] = mapFloatGet(m_map, keyPlotRatioSpectrogram, 0.8f);
     ratios[1] = mapFloatGet(m_map, keyPlotRatioWaveform, 0.2f);
@@ -105,7 +130,7 @@ void Settings::setSpectrumFreqScale(int scale) {
 }
 
 double Settings::spectrumFreqMin() {
-    return save(mapDoubleGet(m_map, keySpectrumFreqMin, 0));
+    return save(mapDoubleGet(m_map, keySpectrumFreqMin, 16));
 }
 
 void Settings::setSpectrumFreqMin(double freq) {
@@ -137,9 +162,9 @@ void Settings::setSpectrumMaxDb(double db) {
 }
 
 void Settings::pitchColor(float rgb[3]) {
-    rgb[0] = mapFloatGet(m_map, keyPitchColor + suffixRed, 0.49f);
-    rgb[1] = mapFloatGet(m_map, keyPitchColor + suffixGreen, 0.98f);
-    rgb[2] = mapFloatGet(m_map, keyPitchColor + suffixBlue, 1.00f);
+    rgb[0] = mapFloatGet(m_map, keyPitchColor + suffixRed, 0.87f);
+    rgb[1] = mapFloatGet(m_map, keyPitchColor + suffixGreen, 0.45f);
+    rgb[2] = mapFloatGet(m_map, keyPitchColor + suffixBlue, 1.0f);
     save();
 }
 
@@ -221,22 +246,36 @@ void Settings::setFftLength(int nfft) {
     if (mapIntSet(m_map, keyFftLength, nfft)) save();
 }
 
+uint64_t Settings::maxSpectrogramMemory() {
+    // Default 512 MB.
+    return save(mapU64Get(m_map, keySpectrogramMemory, 512_u64));
+}
+
+void Settings::setMaxSpectrogramMemory(uint64_t mem) {
+    if (mapU64Set(m_map, keySpectrogramMemory, mem)) save();
+}
+
+
 // -- define the default no-op settings backend for default initialization.
 
 namespace {
-void readNoOp(const std::string& appName, SettingsMap& map) {}
-void writeNoOp(const std::string& appName, const SettingsMap& map) {}
-}  // namespace
+void readNoOp(const std::string& appName, SettingsMap& map) {
+}
 
-SettingsBackend::SettingsBackend() : read(readNoOp), write(writeNoOp) {}
+void writeNoOp(const std::string& appName, const SettingsMap& map) {
+}
+} // namespace
+
+SettingsBackend::SettingsBackend() : read(readNoOp), write(writeNoOp) {
+}
 
 SettingsBackend::SettingsBackend(ReadFunc read, WriteFunc write)
-    : read(read), write(write) {}
+    : read(read), write(write) {
+}
 
 // -- util function definitions.
 
 namespace {
-
 // Set value and return true if changed.
 bool setAndCheck(SettingsMap& map, const std::string& key, const std::string& value) {
     bool different = (map[key] != value);
@@ -266,6 +305,22 @@ int mapIntGet(SettingsMap& map, const std::string& key, const int nDefault) {
     auto& valstr = map[key];
     try {
         return std::stoi(valstr);
+    } catch (const std::invalid_argument& err) {
+    } catch (const std::out_of_range& err) {
+        // Fall through
+    }
+    valstr = std::to_string(nDefault);
+    return nDefault;
+}
+
+bool mapU64Set(SettingsMap& map, const std::string& key, const uint64_t value) {
+    return setAndCheck(map, key, std::to_string(value));
+}
+
+uint64_t mapU64Get(SettingsMap& map, const std::string& key, const uint64_t nDefault) {
+    auto& valstr = map[key];
+    try {
+        return std::stoull(valstr);
     } catch (const std::invalid_argument& err) {
     } catch (const std::out_of_range& err) {
         // Fall through
@@ -324,5 +379,4 @@ std::string mapStrGet(SettingsMap& map, const std::string& key,
 bool mapStrSet(SettingsMap& map, const std::string& key, const std::string& value) {
     return setAndCheck(map, key, value);
 }
-
-}  // namespace
+} // namespace

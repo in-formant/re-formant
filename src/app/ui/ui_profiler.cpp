@@ -2,18 +2,22 @@
 #include "../processing/thread/processingthread.h"
 #include "ui_private.h"
 
+#include <cmath>
+
 void reformant::ui::profiler(AppState& appState) {
     if (ImGui::Begin("Profiler")) {
-        const uint64_t bytesUsed = reformant::memoryUsage();
-        if (bytesUsed < 1024) {
+        if (const uint64_t bytesUsed = reformant::memoryUsage(); bytesUsed < 1024) {
             ImGui::Text("Memory used: %llu B", bytesUsed);
         } else {
-            const uint64_t kbUsed = bytesUsed / 1024;
-            if (kbUsed < 1024) {
+            if (const uint64_t kbUsed = bytesUsed / 1024; kbUsed < 1024) {
                 ImGui::Text("Memory used: %llu kB", kbUsed);
             } else {
-                const uint64_t mbUsed = kbUsed / 1024;
-                ImGui::Text("Memory used: %llu MB", mbUsed);
+                if (const uint64_t mbUsed = kbUsed / 1024; mbUsed < 1024) {
+                    ImGui::Text("Memory used: %llu MB", mbUsed);
+                } else {
+                    const uint64_t gbUsed = mbUsed / 1024;
+                    ImGui::Text("Memory used: %llu GB", gbUsed);
+                }
             }
         }
 
@@ -29,7 +33,11 @@ void reformant::ui::profiler(AppState& appState) {
         }
 
         ImGui::Text("Time spent processing: %d ms",
-                    (int)std::round(appState.ui.averageProcessingTime));
+                    static_cast<int>(std::round(appState.ui.averageProcessingTime)));
+
+        ImGui::Text("FPS: %d", static_cast<int>(std::round(ImGui::GetIO().Framerate)));
     }
     ImGui::End();
+
+    appState.settings.setShowProfiler(appState.ui.showProfiler);
 }

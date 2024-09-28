@@ -12,17 +12,21 @@ using namespace reformant;
 
 namespace {
 void subtractReferenceMean(std::vector<float>& s);
+
 std::vector<float> downsampleSignal(const std::vector<float>& s, int off, int len,
                                     double Fs, double Fds, Resampler& resampler);
+
 void calculateDownsampledNCCF(const std::vector<float>& dss, int dsn, int dsK1, int dsK2,
                               std::vector<double>& dsNCCF);
+
 void calculateOriginalNCCF(const std::vector<float>& s, int off, double Fs, double Fds,
                            int n, int K,
-                           const std::vector<std::pair<double, double>>& dsPeaks,
+                           const std::vector<std::pair<double, double> >& dsPeaks,
                            std::vector<double>& nccf);
-std::vector<std::pair<double, double>> findPeaksWithThreshold(
+
+std::vector<std::pair<double, double> > findPeaksWithThreshold(
     const std::vector<double>& nccf, double cand_tr, int n_cands, bool paraInterp);
-}  // namespace
+} // namespace
 
 PitchController::PitchController(AppState& appState)
     : appState(appState),
@@ -50,12 +54,18 @@ PitchController::PitchController(AppState& appState)
 void PitchController::forceClear(bool lock) {
     if (lock) m_mutex.lock();
 
-    m_times.clear();
-    m_pitches.clear();
-    std::fill(m_pitchBuffer.begin(), m_pitchBuffer.end(), PitchPoint{0, -1});
-
     m_dsResampler.reset();
     m_dsResampler.skipZeros();
+
+    m_lastTime = 0;
+    m_lastSampleRate = -1;
+
+    m_times.clear();
+    m_pitches.clear();
+
+    m_minSilenceRunLength = 0;
+    m_minVoicingRunLength = 0;
+    std::fill(m_pitchBuffer.begin(), m_pitchBuffer.end(), PitchPoint{0, -1});
 
     if (lock) m_mutex.unlock();
 }
@@ -88,19 +98,19 @@ void PitchController::updateIfNeeded() {
     // Correlation window size. (secs)
     constexpr double w = 0.0075;
 
-    const int n = (int)std::round(w * Fs);
-    const int K = (int)std::round(Fs / F0min);
+    const int n = static_cast<int>(std::round(w * Fs));
+    const int K = static_cast<int>(std::round(Fs / F0min));
     const int wl = n + K;
 
     const double Fds = std::round(Fs / std::round(Fs / (4 * F0max)));
-    const int dsn = (int)std::round(w * Fds);
-    const int dsK1 = (int)std::round(Fds / F0max);
-    const int dsK2 = (int)std::round(Fds / F0min);
+    const int dsn = static_cast<int>(std::round(w * Fds));
+    const int dsK1 = static_cast<int>(std::round(Fds / F0max));
+    const int dsK2 = static_cast<int>(std::round(Fds / F0min));
     const int dswl = dsn + dsK2;
 
     const double beta = lag_wt / (Fs / F0min);
 
-    const int J = std::round(0.03 * Fs);
+    const int J = static_cast<int>(std::round(0.03 * Fs));
 
     const int trackIndex0 = m_lastTime;
 
@@ -235,12 +245,12 @@ void calculateDownsampledNCCF(const std::vector<float>& dss, const int dsn,
 
 void calculateOriginalNCCF(const std::vector<float>& s, const int off, const double Fs,
                            const double Fds, const int n, const int K,
-                           const std::vector<std::pair<double, double>>& dsPeaks,
+                           const std::vector<std::pair<double, double> >& dsPeaks,
                            std::vector<double>& nccf) {
     std::vector<int> lagsToCalculate;
 
     for (const auto& [dsk, y] : dsPeaks) {
-        const int k = (int)std::round((Fs * dsk) / Fds);
+        const int k = static_cast<int>(std::round((Fs * dsk) / Fds));
 
         if (k >= 0 && k <= K) lagsToCalculate.push_back(k);
 
@@ -256,8 +266,7 @@ void calculateOriginalNCCF(const std::vector<float>& s, const int off, const dou
 
     std::fill(nccf.begin(), nccf.end(), 0);
 
-    double e0;
-    {
+    double e0; {
         int j = 0;
         double v = 0;
         for (int l = j; l < j + n; ++l) {
@@ -283,7 +292,7 @@ void calculateOriginalNCCF(const std::vector<float>& s, const int off, const dou
     }
 }
 
-std::vector<std::pair<double, double>> findPeaksWithThreshold(
+std::vector<std::pair<double, double> > findPeaksWithThreshold(
     const std::vector<double>& nccf, const double cand_tr, const int n_cands,
     const bool paraInterp) {
     double max = std::numeric_limits<double>::lowest();
@@ -297,7 +306,7 @@ std::vector<std::pair<double, double>> findPeaksWithThreshold(
 
     auto allPeaks = util::findPeaks(nccf);
 
-    std::vector<std::pair<double, double>> peaks;
+    std::vector<std::pair<double, double> > peaks;
 
     for (const int k : allPeaks) {
         if (k >= 0 && k < nccf.size() && nccf[k] > threshold) {
@@ -314,7 +323,7 @@ std::vector<std::pair<double, double>> findPeaksWithThreshold(
 
     return peaks;
 }
-}  // namespace
+} // namespace
 
 PitchResults PitchController::getPitchesForRange(double timeMin, double timeMax,
                                                  double timePerPixel) {

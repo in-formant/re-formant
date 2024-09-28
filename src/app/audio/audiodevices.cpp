@@ -61,7 +61,7 @@ void AudioDevices::refreshDeviceInfo(int hostApiIndex) {
 std::vector<double> AudioDevices::supportedSampleRates(PaDeviceIndex index,
                                                        bool input) const {
     constexpr double standardSampleRates[] = {
-        8000.0,  9600.0,  11025.0, 12000.0, 16000.0, 22050.0,
+        8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0,
         24000.0, 32000.0, 44100.0, 48000.0, -1};
 
     PaStreamParameters parameters;
@@ -131,7 +131,11 @@ const AudioDeviceInfo* AudioDevices::outputDevice(PaDeviceIndex index) const {
 }
 
 const AudioHostApiInfo* AudioDevices::defaultHostApi() const {
+    #ifdef _WIN32
+    return hostApiByType(paWASAPI);
+    #else
     return hostApi(Pa_GetDefaultHostApi());
+    #endif
 }
 
 const AudioDeviceInfo* AudioDevices::defaultInputDevice() const {

@@ -8,22 +8,22 @@ namespace reformant {
 
 struct ResamplerPrivate;
 
-class Resampler {
+class Resampler final {
    public:
-    Resampler(int quality = 10, bool skipZeros = false);
-    Resampler(double inFs, double outFs, int quality = 10,
+    explicit Resampler(int quality = 10, bool skipZeros = false);
+    explicit Resampler(double inFs, double outFs, int quality = 10,
               bool skipZeros = false);
-    virtual ~Resampler();
+    ~Resampler();
 
-    bool isValid() const;
+    [[nodiscard]] bool isValid() const;
 
     void setRate(double inFs, double outFs);
 
     void reset();
     void skipZeros();
 
-    int inputLatency() const;
-    int outputLatency() const;
+    [[nodiscard]] int inputLatency() const;
+    [[nodiscard]] int outputLatency() const;
 
     // Have two versions of the process method. In-place and out-of-place
     void process(std::vector<float>& out, const std::vector<float>& data,
@@ -33,7 +33,7 @@ class Resampler {
                                int length = -1);
 
     // Return # of input frames needed to a given # of output frames.
-    int requiredInputFrames(const int outputLength) const;
+    [[nodiscard]] int requiredInputFrames(int outputLength) const;
 
    private:
     void createResampler();
@@ -47,10 +47,10 @@ class Resampler {
     ResamplerPrivate* _p;
 };
 
-class ResamplerError : std::exception {
+class ResamplerError final : std::exception {
    public:
-    ResamplerError(const char* format, ...);
-    const char* what() const noexcept override;
+    explicit ResamplerError(const char* format, ...);
+    [[nodiscard]] const char* what() const noexcept override;
 
    private:
     static constexpr size_t msgsz = 256;

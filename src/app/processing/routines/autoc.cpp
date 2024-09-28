@@ -2,7 +2,7 @@
 
 #include "routines.h"
 
-void autoc(int windowSize, const std::vector<double>& s, int p, std::vector<double>& r,
+void autoc(const int windowSize, const std::vector<double>& s, const int p, std::vector<double>& r,
            double* e) {
     double sum0 = 0.;
     for (int i = 0; i < windowSize; ++i) {

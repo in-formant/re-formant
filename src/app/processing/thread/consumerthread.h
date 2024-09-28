@@ -9,13 +9,13 @@ class AppState;
 
 class ConsumerThread {
    public:
-    ConsumerThread(AppState& appState, int approxRetrieveDelayMs = 50);
+    explicit ConsumerThread(AppState& appState, int approxRetrieveDelayMs = 50);
 
     void start();
     void terminate();
 
    private:
-    void run();
+    void run() const;
 
     AppState& appState;
 

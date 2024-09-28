@@ -13,11 +13,12 @@ ConsumerThread::ConsumerThread(AppState& appState,
                                const int approxRetrieveDelayMs)
     : appState(appState),
       m_approxRetrieveDelayMs(approxRetrieveDelayMs),
-      m_isRunning(false) {}
+      m_isRunning(false) {
+}
 
 void ConsumerThread::start() {
     m_isRunning = true;
-    m_thread = std::thread(std::bind(&ConsumerThread::run, this));
+    m_thread = std::thread([this] { run(); });
 }
 
 void ConsumerThread::terminate() {
@@ -25,7 +26,7 @@ void ConsumerThread::terminate() {
     m_thread.join();
 }
 
-void ConsumerThread::run() {
+void ConsumerThread::run() const {
     auto lastTime = steady_clock::now();
 
     appState.audioInput.setBufferCallback(
@@ -49,7 +50,7 @@ void ConsumerThread::run() {
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
             std::cout << "Retrieving took longer than "
-                      << m_approxRetrieveDelayMs << " ms" << std::endl;
+                << m_approxRetrieveDelayMs << " ms" << std::endl;
         }
 
         lastTime = steady_clock::now();

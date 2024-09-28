@@ -1,5 +1,7 @@
 #include "denoiser.h"
 
+#include <cstdint>
+#include <limits>
 #include <rnnoise.h>
 
 using namespace reformant;

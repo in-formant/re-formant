@@ -1,7 +1,7 @@
 #include <sndfile.h>
 
 #include <numeric>
-#include <set>
+#include <cstring>
 
 #include "audiofiles.h"
 
@@ -64,8 +64,8 @@ const std::vector<AudioFileEncoding>& audiofiles::getFormatEncodings() {
 
         sf_command(nullptr, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
 
-        int subtype = info.format & SF_FORMAT_SUBMASK;
-        std::string name = normalizeName(info.name);
+        const int subtype = info.format & SF_FORMAT_SUBMASK;
+        const std::string name = normalizeName(info.name);
 
         s_encodings.push_back({subtype, name});
     }
@@ -100,7 +100,7 @@ const std::string& audiofiles::getReadFilter() {
 }
 
 template <typename T>
-inline bool contains(const std::vector<T>& list, T elem, int* index) {
+bool contains(const std::vector<T>& list, T elem, int* index) {
     for (int i = 0; i < list.size(); ++i) {
         if (list[i] == elem) {
             *index = i;

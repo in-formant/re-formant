@@ -37,7 +37,7 @@ void FormantController::updateIfNeeded() {
 
     // Just return if we couldn't lock, this isn't important because it's
     // ran periodically, and it avoids a potential deadlock.
-    std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
+    const std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
     if (!trackLock.owns_lock()) return;
 
     std::lock_guard lockGuard(m_mutex);
@@ -59,14 +59,14 @@ void FormantController::updateIfNeeded() {
 
     constexpr double windowDuration = 15.0 / 1000.0;     // Window size of each LPC frame
     constexpr double frameIntervalTime = 10.0 / 1000.0;  // Time between each LPC frame
-    const int frameInterval = (int)std::round(frameIntervalTime * Fs);
+    const int frameInterval = static_cast<int>(std::round(frameIntervalTime * Fs));
 
     constexpr double analysisDuration = 500.0 / 1000.0;  // Approx time of each analysis
     constexpr double analysisGap = 100.0 / 1000.0;  // Approx gap between each analysis
 
     // Exact sample counts.
-    const int analysisSamplesEx = (int)std::round(analysisDuration * Fs);
-    const int analysisGapSamplesEx = (int)std::round(analysisGap * Fs);
+    const int analysisSamplesEx = static_cast<int>(std::round(analysisDuration * Fs));
+    const int analysisGapSamplesEx = static_cast<int>(std::round(analysisGap * Fs));
 
     // Sample counts rounded to an integer multiple of frameInterval
     const int analysisSamples = (analysisSamplesEx / frameInterval) * frameInterval;
@@ -109,9 +109,8 @@ void FormantController::updateIfNeeded() {
     std::vector<double> s(ds.begin(), ds.end());
     for (auto& x : s) x *= std::numeric_limits<int16_t>::max();
 
-    /// TODO: fix LPC_BSA not working.
     const auto ps = lpc_poles(s, Fds, windowDuration, frameIntervalTime, 12, 0.97,
-                              LPC_COVAR, WINDOW_COS4);
+                              LPC_BSA, WINDOW_HAMMING);
 
     const auto track = m_tracking.track(ps);
     // track.form : (nForm, ps.length)
@@ -155,8 +154,7 @@ FormantResults FormantController::getFormantsForRange(double timeMin, double tim
     const int trackSamples = appState.audioTrack.sampleCount();
 
     for (int i = 0; i < m_times.size(); ++i) {
-        const double time = m_times[i];
-        if (time >= timeMin && time <= timeMax) {
+        if (const double time = m_times[i]; time >= timeMin && time <= timeMax) {
             const double frequency = m_frequencies[i];
 
             result.times.push_back(time);

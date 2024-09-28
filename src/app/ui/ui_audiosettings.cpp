@@ -99,7 +99,7 @@ void reformant::ui::audioSettings(AppState& appState) {
             appState.settings.setNoiseReduction(enableNoiseReduction);
         }
 
-        const int currentSampleRate = (int)appState.audioTrack.sampleRate();
+        const int currentSampleRate = static_cast<int>(appState.audioTrack.sampleRate());
 
         if (ImGui::BeginCombo("Recording track sample rate",
                               std::to_string(currentSampleRate).c_str())) {
@@ -155,19 +155,23 @@ void reformant::ui::audioSettings(AppState& appState) {
             ImGui::EndCombo();
         }
 
-        float maxSpecMemoryMb =
-            appState.spectrogramController->maxMemoryMemo() / 1024.0f / 1024.0f;
+        uint64_t maxSpecMemoryMb =
+            appState.spectrogramController->maxMemoryMemo() / 1024_u64 / 1024_u64;
+        uint64_t specMemStep = 4;
+        uint64_t specMemStepFast = 32;
 
-        if (ImGui::InputFloat("Max spectrogram memory usage", &maxSpecMemoryMb,
-                              1.0f, 16.0f, "%.0f MB")) {
+        if (ImGui::InputScalar("Max spectrogram memory usage", ImGuiDataType_U64,
+                               &maxSpecMemoryMb,
+                               &specMemStep, &specMemStepFast, "%llu MB")) {
             appState.spectrogramController->setMaxMemoryMemo(
-                (uint64_t)maxSpecMemoryMb * 1024_u64 * 1024_u64);
+                maxSpecMemoryMb * 1024 * 1024);
+            appState.settings.setMaxSpectrogramMemory(maxSpecMemoryMb);
         }
 
         ImGui::Text(
             "(approximately %.2f seconds before forced refresh)",
             0.9 *
-                appState.spectrogramController->approxMemoCapacityInSeconds());
+            appState.spectrogramController->approxMemoCapacityInSeconds());
     }
     ImGui::End();
 
