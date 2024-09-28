@@ -6,6 +6,8 @@ in [GitHub issues](https://github.com/in-formant/re-formant/issues).
 
 Has not been tested much on Linux, hasn't been built or tested at all on macOS yet.
 
+# [Download](https://github.com/in-formant/re-formant/releases/tag/v0.1-alpha)
+
 ## Building
 
 The only dependencies required to install are the ones in the build-only section, the other ones are either optional,
