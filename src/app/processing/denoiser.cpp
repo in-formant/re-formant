@@ -2,6 +2,9 @@
 
 #include <rnnoise.h>
 
+#include <cstdint>
+#include <limits>
+
 using namespace reformant;
 
 struct reformant::DenoiserPrivate {

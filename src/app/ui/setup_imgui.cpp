@@ -20,8 +20,7 @@ void reformant::ui::setupImGui(AppState& appState) {
     ImGui::CreateContext();
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
@@ -40,17 +39,17 @@ void reformant::ui::setupImGui(AppState& appState) {
     io.Fonts->FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_ForceAutoHint;
     io.Fonts->FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LightHinting;
 
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(
-        g_interMedium_compressed_data_base85, fontSize, nullptr,
-        io.Fonts->GetGlyphRangesDefault());
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(g_interMedium_compressed_data_base85,
+                                                   fontSize, nullptr,
+                                                   io.Fonts->GetGlyphRangesDefault());
 
     static const ImWchar iconsRange[] = {0xE000, 0xF8FF, 0};
     ImFontConfig config;
     config.MergeMode = true;
     config.GlyphMinAdvanceX = fontSize;
     config.GlyphOffset.y = iconVerticalOffset;
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(
-        g_faRegular_compressed_data_base85, fontSize, &config, iconsRange);
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(g_faRegular_compressed_data_base85,
+                                                   fontSize, &config, iconsRange);
 
     config.MergeMode = false;
     config.GlyphOffset.y = 0;
@@ -70,8 +69,8 @@ void reformant::ui::setupImGui(AppState& appState) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
-                     (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
         return (void*)(uintptr_t)tex;

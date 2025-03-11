@@ -34,9 +34,11 @@ void reformant::ui::spectrogram(AppState& appState) {
     FormantController& formantController = *appState.formantController;
 
     if (ImGui::Begin("Spectrogram")) {
-        bool timeCursorChangedForcefully = false;
+        // if the cursor is being moved manually
+        bool isTimeCursorBeingHeld = false;
+        bool isPlayingOrRecording = false;
 
-        if (!appState.audioOutput.isPlaying()) {
+        if (!appState.audio.isPlaying()) {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04b")) {
                 // Restart from the beginning if the cursor is at the end.
@@ -49,28 +51,28 @@ void reformant::ui::spectrogram(AppState& appState) {
                     spectrogramController.setTime(0);
                 }
 
-                appState.audioOutput.startPlaying();
+                appState.audio.startPlayback();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start playback");
         } else {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04c")) {
-                appState.audioOutput.stopPlaying();
+                appState.audio.stopPlayback();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop playback");
 
             // Move the view window if playing.
-            timeCursorChangedForcefully = true;
+            isPlayingOrRecording = true;
         }
 
         ImGui::SameLine();
 
-        if (!appState.audioInput.isRecording()) {
+        if (!appState.audio.isCapturing()) {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf111")) {
-                appState.audioInput.startRecording();
+                appState.audio.startCapture();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start recording");
@@ -80,12 +82,12 @@ void reformant::ui::spectrogram(AppState& appState) {
 
                 const double newTime = appState.audioTrack.duration();
                 spectrogramController.setTime(newTime);
-                timeCursorChangedForcefully = true;
+                isPlayingOrRecording = true;
             }
         } else {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04d")) {
-                appState.audioInput.stopRecording();
+                appState.audio.stopCapture();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop recording");
@@ -93,7 +95,7 @@ void reformant::ui::spectrogram(AppState& appState) {
             // Advance scrub to the end of the recording track.
             const double newTime = appState.audioTrack.duration();
             spectrogramController.setTime(newTime);
-            timeCursorChangedForcefully = true;
+            isPlayingOrRecording = true;
 
             appState.ui.isRecording = true;
         }
@@ -108,7 +110,7 @@ void reformant::ui::spectrogram(AppState& appState) {
         if (ImGui::SliderDouble("##scrub", &sliderTime, 0, appState.audioTrack.duration(),
                                 "%.3f s")) {
             spectrogramController.setTime(sliderTime);
-            timeCursorChangedForcefully = true;
+            isTimeCursorBeingHeld = true;
         }
 
         const float availWidth = ImGui::GetContentRegionAvail().x;
@@ -150,7 +152,7 @@ void reformant::ui::spectrogram(AppState& appState) {
                 const double timePerPixel =
                     ImPlot::PixelsToPlot({1, 0}).x - ImPlot::PixelsToPlot({0, 0}).x;
 
-                auto spectrogram = spectrogramController.getSpectrogramForRange(
+                const auto& spectrogram = spectrogramController.getSpectrogramForRange(
                     rect.X.Min, rect.X.Max, timePerPixel);
 
                 if (!spectrogram.data.empty()) {
@@ -162,6 +164,7 @@ void reformant::ui::spectrogram(AppState& appState) {
                                         {spectrogram.timeMax, spectrogram.freqMax});
                 }
 
+                /*
                 auto pitches = pitchController.getPitchesForRange(rect.X.Min, rect.X.Max,
                                                                   timePerPixel);
 
@@ -181,13 +184,14 @@ void reformant::ui::spectrogram(AppState& appState) {
                     appState.ui.formantOutlineColor);
                 ImPlot::PlotScatter("##formant_plot", formants.times.data(),
                                     formants.frequencies.data(), formants.times.size());
+*/
 
                 double dragTime = spectrogramController.time();
                 if (ImPlot::DragLineX(838492, &dragTime, {1, 1, 1, 1}, 2,
                                       ImPlotDragToolFlags_None)) {
                     if (dragTime >= 0 && dragTime <= appState.audioTrack.duration()) {
                         spectrogramController.setTime(dragTime);
-                        timeCursorChangedForcefully = true;
+                        isTimeCursorBeingHeld = true;
                     }
                 }
 
@@ -239,10 +243,10 @@ void reformant::ui::spectrogram(AppState& appState) {
 
                 double dragTime = spectrogramController.time();
                 if (ImPlot::DragLineX(838493, &dragTime, {1, 1, 1, 1}, 2,
-                                      ImPlotDragToolFlags_Delayed)) {
+                                      ImPlotDragToolFlags_None)) {
                     if (dragTime >= 0 && dragTime <= appState.audioTrack.duration()) {
                         spectrogramController.setTime(dragTime);
-                        timeCursorChangedForcefully = true;
+                        isTimeCursorBeingHeld = true;
                     }
                 }
 
@@ -255,35 +259,70 @@ void reformant::ui::spectrogram(AppState& appState) {
 
         appState.settings.setSpectrumPlotRatios(appState.ui.spectrumPlotRatios);
 
-        // Move the time range if it's out of the frame. (animate smoothly)
-        // Only do that if the time was changed.
-        if (timeCursorChangedForcefully || appState.ui.isInTimeScrollAnimation) {
-            double newTime = spectrogramController.time();
-            if (appState.ui.isRecording) {
-                newTime += 100.0 / 1000.0;
-            }
-            const double plotRangeSpan =
-                appState.ui.plotTimeMax - appState.ui.plotTimeMin;
+        // Scrolling / time cursor movement logic.
+
+        const double plotRangeSpan = appState.ui.plotTimeMax - appState.ui.plotTimeMin;
+        const double timeEnd = appState.audioTrack.duration();
+
+        if (isTimeCursorBeingHeld) {
+            // If the cursor is being held right now, just move the frame normally.
+            const double newTime = spectrogramController.time();
+            const double timeDiff = (newTime > appState.ui.plotTimeMax)
+                                      ? newTime - appState.ui.plotTimeMax
+                                      : newTime - appState.ui.plotTimeMin;
             if (newTime < appState.ui.plotTimeMin || newTime > appState.ui.plotTimeMax) {
-                constexpr double animationTime = 50.0 / 1000.0;
-                const double timeDelta = (newTime > appState.ui.plotTimeMax)
-                                           ? newTime - appState.ui.plotTimeMax
-                                           : newTime - appState.ui.plotTimeMin;
-                const double deltaPct =
-                    std::min(1.0, ImGui::GetIO().DeltaTime / animationTime);
-                appState.ui.plotTimeMin += timeDelta * deltaPct;
-                appState.ui.plotTimeMax += timeDelta * deltaPct;
-                appState.ui.isInTimeScrollAnimation = true;
-            } else {
-                appState.ui.isInTimeScrollAnimation = false;
+                appState.ui.plotTimeMin += timeDiff;
+                appState.ui.plotTimeMax += timeDiff;
             }
+
+            appState.ui.wasTimeCursorHeldLastFrame = true;
+        } else if (appState.ui.wasTimeCursorHeldLastFrame) {
+            // If the cursor was *just* released and we are playing or recording,
+            // move the frame back to the end.
+            if (isPlayingOrRecording && (timeEnd < appState.ui.plotTimeMin ||
+                                         timeEnd > appState.ui.plotTimeMax)) {
+                appState.ui.plotTimeMin = timeEnd - plotRangeSpan;
+                appState.ui.plotTimeMax = timeEnd;
+            }
+
+            appState.ui.wasTimeCursorHeldLastFrame = false;
+        } else if (isPlayingOrRecording) {
+            // If we just started playing or recording,
+            // move the frame back to the end.
+            if (!appState.ui.wasPlayingOrRecordingLastFrame ||
+                (timeEnd < appState.ui.plotTimeMin ||
+                 timeEnd > appState.ui.plotTimeMax)) {
+                appState.ui.plotTimeMin = timeEnd - plotRangeSpan;
+                appState.ui.plotTimeMax = timeEnd;
+            }
+
+            // Arbitrarily make sure at least 99% of the frame is visible.
+            constexpr double pct = 0.99;
+            if (timeEnd < appState.ui.plotTimeMax - (1 - pct) * plotRangeSpan) {
+                appState.ui.plotTimeMax = timeEnd + (1 - pct) * plotRangeSpan;
+                appState.ui.plotTimeMin = timeEnd - pct * plotRangeSpan;
+            }
+            appState.ui.plotTimeMin += ImGui::GetIO().DeltaTime;
+            appState.ui.plotTimeMax += ImGui::GetIO().DeltaTime;
+
+            appState.ui.wasPlayingOrRecordingLastFrame = true;
+        }
+
+        if (!isPlayingOrRecording) {
+            appState.ui.wasPlayingOrRecordingLastFrame = false;
+        }
+
+        // Restrict the frame to positive time ranges.
+        if (appState.ui.plotTimeMin < 0) {
+            appState.ui.plotTimeMax -= appState.ui.plotTimeMin;
+            appState.ui.plotTimeMin = 0;
         }
     }
     ImGui::End();
 
     // Stop playing if playing past the end of recording
-    if (appState.audioOutput.isPlaying() &&
+    if (appState.audio.isPlaying() &&
         spectrogramController.timeSamples() >= appState.audioTrack.sampleCount()) {
-        appState.audioOutput.stopPlaying();
+        appState.audio.stopPlayback();
     }
 }

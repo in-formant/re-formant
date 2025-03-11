@@ -1,3 +1,4 @@
+project(speexdsp)
 add_library(speex_resampler STATIC
     arch.h
     resample_neon.h

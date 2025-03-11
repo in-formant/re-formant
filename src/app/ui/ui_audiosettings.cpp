@@ -7,81 +7,72 @@
 
 void reformant::ui::audioSettings(AppState& appState) {
     if (ImGui::Begin("Audio settings", &appState.ui.showAudioSettings)) {
-        if (ImGui::BeginCombo("Host API",
-                              appState.ui.currentAudioHostApi->name)) {
-            const auto& hostApis = appState.audioDevices.hostApiInfos();
+        const auto& backends = appState.audio.backends();
 
-            for (int i = 0; i < hostApis.size(); ++i) {
-                const auto& hostApi = hostApis[i];
-                const bool isSelected =
-                    (appState.ui.currentAudioHostApi->index == hostApi.index);
+        std::string backendName =
+            appState.audio.backend(appState.ui.audioBackend)->name();
 
-                if (ImGui::Selectable(hostApi.name, isSelected)) {
-                    appState.ui.currentAudioHostApi = &hostApi;
-                    appState.audioDevices.refreshDeviceInfo(hostApi.index);
+        auto captureDevice = appState.audio.currentCaptureDevice().lock();
+        std::string captureDeviceName = captureDevice ? captureDevice->name() : "";
 
-                    // Set current device to default host API device.
-                    const auto& defaultInputDevice =
-                        appState.audioDevices.inputDevice(
-                            hostApi.defaultInputDevice);
-                    const auto& defaultOutputDevice =
-                        appState.audioDevices.outputDevice(
-                            hostApi.defaultOutputDevice);
+        auto playbackDevice = appState.audio.currentPlaybackDevice().lock();
+        std::string playbackDeviceName = playbackDevice ? playbackDevice->name() : "";
 
-                    appState.ui.currentAudioInDevice = defaultInputDevice;
-                    appState.audioInput.setDevice(*defaultInputDevice);
+        if (ImGui::BeginCombo("Backend", backendName.c_str())) {
+            for (int i = 0; i < backends.size(); ++i) {
+                const auto& backend = backends[i];
+                const bool isSelected = (appState.ui.audioBackend == backend->type());
 
-                    appState.ui.currentAudioOutDevice = defaultOutputDevice;
-                    appState.audioOutput.setDevice(*defaultOutputDevice);
+                if (ImGui::Selectable(backend->name().c_str(), isSelected)) {
+                    auto defaultCaptureDevice = backend->defaultCaptureDevice().lock();
+                    auto defaultPlaybackDevice = backend->defaultPlaybackDevice().lock();
 
-                    appState.settings.setAudioHostApi(hostApi.type);
-                    appState.settings.setInputDeviceName(
-                        defaultInputDevice->name);
-                    appState.settings.setOutputDeviceName(
-                        defaultOutputDevice->name);
+                    appState.audio.setCaptureDevice(backend->defaultCaptureDevice());
+                    appState.audio.setPlaybackDevice(backend->defaultPlaybackDevice());
+                    appState.audioOutputResampler.setRate(
+                        appState.audioTrack.sampleRate(),
+                        defaultCaptureDevice->sampleRate());
+                    appState.ui.audioBackend = backend->type();
                 }
                 if (isSelected) ImGui::SetItemDefaultFocus();
             }
+
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Input device",
-                              appState.ui.currentAudioInDevice->name)) {
-            const auto& devices = appState.audioDevices.inputDeviceInfos();
+        const auto& selectedBackend = appState.audio.backend(appState.ui.audioBackend);
 
-            for (int i = 0; i < devices.size(); ++i) {
-                const auto& device = devices[i];
-                const bool isSelected =
-                    (appState.ui.currentAudioInDevice->index == device.index);
+        if (ImGui::BeginCombo("Capture device", captureDeviceName.c_str())) {
+            for (auto& devicePtr : selectedBackend->devices()) {
+                auto device = devicePtr.lock();
+                if (device && device->isValid() && device->canCapture()) {
+                    bool isSelected = (captureDeviceName == device->name());
 
-                if (ImGui::Selectable(device.name, isSelected)) {
-                    appState.ui.currentAudioInDevice = &device;
-                    appState.audioInput.setDevice(device);
-
-                    appState.settings.setInputDeviceName(device.name);
+                    if (ImGui::Selectable(device->name().c_str(), isSelected)) {
+                        appState.audio.setCaptureDevice(device);
+                        appState.audioOutputResampler.setRate(
+                            appState.audioTrack.sampleRate(), device->sampleRate());
+                    }
+                    if (isSelected) ImGui::SetItemDefaultFocus();
                 }
-                if (isSelected) ImGui::SetItemDefaultFocus();
             }
+
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Output device",
-                              appState.ui.currentAudioOutDevice->name)) {
-            const auto& devices = appState.audioDevices.outputDeviceInfos();
+        if (ImGui::BeginCombo("Playback device", playbackDeviceName.c_str())) {
+            for (auto& devicePtr : selectedBackend->devices()) {
+                auto device = devicePtr.lock();
+                if (device && device->isValid() && device->canPlayback()) {
+                    bool isSelected = (playbackDeviceName == device->name());
 
-            for (int i = 0; i < devices.size(); ++i) {
-                const auto& device = devices[i];
-                const bool isSelected =
-                    (appState.ui.currentAudioOutDevice->index == device.index);
-
-                if (ImGui::Selectable(device.name, isSelected)) {
-                    appState.ui.currentAudioOutDevice = &device;
-                    appState.audioOutput.setDevice(device);
-
-                    appState.settings.setOutputDeviceName(device.name);
+                    if (ImGui::Selectable(device->name().c_str(), isSelected)) {
+                        appState.audio.setPlaybackDevice(device);
+                    }
+                    if (isSelected) ImGui::SetItemDefaultFocus();
                 }
-                if (isSelected) ImGui::SetItemDefaultFocus();
             }
+
             ImGui::EndCombo();
         }
 
@@ -119,13 +110,13 @@ void reformant::ui::audioSettings(AppState& appState) {
 
                 if (ImGui::Selectable(name.c_str(), isSelected)) {
                     std::lock_guard trackGuard(appState.audioTrack.mutex());
-                    bool wasPlaying = appState.audioOutput.isPlaying();
+                    bool wasPlaying = appState.audio.isPlaying();
                     double time = appState.spectrogramController->time();
-                    if (wasPlaying) appState.audioOutput.stopPlaying();
+                    if (wasPlaying) appState.audio.stopPlayback();
                     appState.audioTrack.setSampleRate(sampleRate);
                     appState.settings.setTrackSampleRate(sampleRate);
                     appState.spectrogramController->forceClear();
-                    if (wasPlaying) appState.audioOutput.startPlaying();
+                    if (wasPlaying) appState.audio.startPlayback();
                     appState.spectrogramController->setTime(time);
                 }
             }
@@ -133,8 +124,7 @@ void reformant::ui::audioSettings(AppState& appState) {
             ImGui::EndCombo();
         }
 
-        const int currentFftLength =
-            (int)appState.spectrogramController->fftLength();
+        const int currentFftLength = (int)appState.spectrogramController->fftLength();
 
         if (ImGui::BeginCombo("Spectrogram FFT length",
                               std::to_string(currentFftLength).c_str())) {
@@ -158,16 +148,14 @@ void reformant::ui::audioSettings(AppState& appState) {
         float maxSpecMemoryMb =
             appState.spectrogramController->maxMemoryMemo() / 1024.0f / 1024.0f;
 
-        if (ImGui::InputFloat("Max spectrogram memory usage", &maxSpecMemoryMb,
-                              1.0f, 16.0f, "%.0f MB")) {
-            appState.spectrogramController->setMaxMemoryMemo(
-                (uint64_t)maxSpecMemoryMb * 1024_u64 * 1024_u64);
+        if (ImGui::InputFloat("Max spectrogram memory usage", &maxSpecMemoryMb, 1.0f,
+                              16.0f, "%.0f MB")) {
+            appState.spectrogramController->setMaxMemoryMemo((uint64_t)maxSpecMemoryMb *
+                                                             1024_u64 * 1024_u64);
         }
 
-        ImGui::Text(
-            "(approximately %.2f seconds before forced refresh)",
-            0.9 *
-                appState.spectrogramController->approxMemoCapacityInSeconds());
+        ImGui::Text("(approximately %.2f seconds before forced refresh)",
+                    0.9 * appState.spectrogramController->approxMemoCapacityInSeconds());
     }
     ImGui::End();
 

@@ -1,6 +1,7 @@
 #ifndef REFORMANT_PROCESSING_UTIL_UTIL_H
 #define REFORMANT_PROCESSING_UTIL_UTIL_H
 
+#include <algorithm>
 #include <vector>
 
 namespace reformant {
@@ -27,8 +28,7 @@ std::vector<T> product(const std::vector<T>& a, const std::vector<T>& b) {
 }
 
 template <typename T>
-std::vector<int> findIndicesLessThan(const std::vector<T>& in,
-                                     const double threshold) {
+std::vector<int> findIndicesLessThan(const std::vector<T>& in, const double threshold) {
     std::vector<int> indices;
     for (int i = 0; i < in.size(); ++i) {
         if (in[i] < threshold) indices.push_back(i + 1);
@@ -37,8 +37,7 @@ std::vector<int> findIndicesLessThan(const std::vector<T>& in,
 }
 
 template <typename T>
-std::vector<T> selectElements(const std::vector<T>& in,
-                              const std::vector<int>& indices) {
+std::vector<T> selectElements(const std::vector<T>& in, const std::vector<int>& indices) {
     std::vector<T> out(indices.size());
     for (int i = 0; i < indices.size(); ++i) {
         out[i] = in[indices[i]];
@@ -62,8 +61,7 @@ std::vector<int> signVector(const std::vector<T>& in, const S sign) {
 }
 
 template <typename T>
-std::pair<T, T> parabolicInterpolation(const std::vector<T>& array,
-                                       const int x) {
+std::pair<T, T> parabolicInterpolation(const std::vector<T>& array, const int x) {
     int x_adjusted;
     double x_ = x;
 
@@ -74,10 +72,9 @@ std::pair<T, T> parabolicInterpolation(const std::vector<T>& array,
     } else {
         T den = array[x + 1] + array[x - 1] - 2 * array[x];
         T delta = array[x - 1] - array[x + 1];
-        return (den == 0)
-                   ? std::make_pair(x_, array[x])
-                   : std::make_pair(x_ + delta / (2 * den),
-                                    array[x] - delta * delta / (8 * den));
+        return (den == 0) ? std::make_pair(x_, array[x])
+                          : std::make_pair(x_ + delta / (2 * den),
+                                           array[x] - delta * delta / (8 * den));
     }
     return std::make_pair(x_adjusted, array[x_adjusted]);
 }
@@ -178,8 +175,7 @@ std::vector<int> findPeaks(const std::vector<T>& x0, const int sign = +1) {
             }
 
             // Make sure we don't iterate past the length of our rpm::vector
-            if (ii == len)
-                break;  // We assign the last point differently out of the loop
+            if (ii == len) break;  // We assign the last point differently out of the loop
 
             ii = ii + 1;  // Move onto the valley
 
@@ -200,8 +196,7 @@ std::vector<int> findPeaks(const std::vector<T>& x0, const int sign = +1) {
             peakMag[cInd - 1] = x[x.size() - 1];
             cInd = cInd + 1;
         } else if (!foundPeak &&
-                   tempMag >
-                       minMag)  // Check if we still need to add the last point
+                   tempMag > minMag)  // Check if we still need to add the last point
         {
             peakLoc[cInd - 1] = tempLoc;
             peakMag[cInd - 1] = tempMag;
@@ -210,8 +205,7 @@ std::vector<int> findPeaks(const std::vector<T>& x0, const int sign = +1) {
 
         // Create output
         if (cInd > 0) {
-            std::vector<int> peakLocTmp(peakLoc.begin(),
-                                        peakLoc.begin() + (cInd - 1));
+            std::vector<int> peakLocTmp(peakLoc.begin(), peakLoc.begin() + (cInd - 1));
             peakInds = selectElements(ind, peakLocTmp);
             // peakMags = rpm::vector<double>(peakLoc.begin(),
             // peakLoc.begin()+cInd-1);

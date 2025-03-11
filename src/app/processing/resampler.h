@@ -11,8 +11,7 @@ struct ResamplerPrivate;
 class Resampler {
    public:
     Resampler(int quality = 10, bool skipZeros = false);
-    Resampler(double inFs, double outFs, int quality = 10,
-              bool skipZeros = false);
+    Resampler(double inFs, double outFs, int quality = 10, bool skipZeros = false);
     virtual ~Resampler();
 
     bool isValid() const;
@@ -26,8 +25,8 @@ class Resampler {
     int outputLatency() const;
 
     // Have two versions of the process method. In-place and out-of-place
-    void process(std::vector<float>& out, const std::vector<float>& data,
-                 int offset = 0, int length = -1);
+    void process(std::vector<float>& out, const std::vector<float>& data, int offset = 0,
+                 int length = -1);
 
     std::vector<float> process(const std::vector<float>& data, int offset = 0,
                                int length = -1);

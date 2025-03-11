@@ -45,8 +45,8 @@ class SpectrogramController {
 
     void updateIfNeeded();
 
-    SpectrogramResults getSpectrogramForRange(double timeMin, double timeMax,
-                                              double tpp);
+    const SpectrogramResults& getSpectrogramForRange(double timeMin, double timeMax,
+                                                     double tpp);
 
    private:
     AppState& appState;
@@ -71,6 +71,7 @@ class SpectrogramController {
     std::vector<double> m_fftMemo;
 
     double m_lastSpecRequestTimeMin;
+    SpectrogramResults m_specResults;
 };
 
 }  // namespace reformant

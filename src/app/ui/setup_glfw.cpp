@@ -32,8 +32,7 @@ void reformant::ui::setupGlfw(AppState& appState) {
     glfwWindowHint(GLFW_SAMPLES, 4);
 
     // Create window
-    appState.ui.window =
-        glfwCreateWindow(854, 480, "ReFormant", nullptr, nullptr);
+    appState.ui.window = glfwCreateWindow(854, 480, "ReFormant", nullptr, nullptr);
 
     if (appState.ui.window == nullptr) {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -41,12 +40,11 @@ void reformant::ui::setupGlfw(AppState& appState) {
     }
 
     // Use the DPI that the application initially starts with.
-    glfwGetWindowContentScale(appState.ui.window, &appState.ui.scalingFactor,
-                              nullptr);
+    glfwGetWindowContentScale(appState.ui.window, &appState.ui.scalingFactor, nullptr);
 
     // Set GL context and setup GL loader.
     glfwMakeContextCurrent(appState.ui.window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize OpenGL context" << std::endl;

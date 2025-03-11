@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <iostream>
 
-#include "audio/setup_audio.h"
+// #include "audio/setup_audio.h"
 #include "processing/controller/formantcontroller.h"
 #include "processing/controller/pitchcontroller.h"
 #include "processing/controller/spectrogramcontroller.h"
@@ -30,16 +30,15 @@ int main(int argc, char* argv[]) {
 
     reformant::ui::setupGlfw(appState);
 
-    PaError paErr = Pa_Initialize();
-    if (paErr != paNoError) {
-        std::cerr << "Failed to initialize PortAudio: " << Pa_GetErrorText(paErr)
-                  << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
     reformant::ui::setupImGui(appState);
 
-    reformant::setupAudio(appState);
+    // ##SETUP AUDIO
+    appState.audioTrack.setSampleRate(appState.settings.trackSampleRate());
+    appState.audioTrack.setDenoising(appState.settings.doNoiseReduction());
+
+    appState.audio.initialize();
+    appState.ui.audioBackend = appState.audio.backends().front()->type();
+    // ###SETUP AUDIO
 
     reformant::SpectrogramController spectrogramController(appState);
     spectrogramController.setFftLength(appState.settings.fftLength());
@@ -76,7 +75,8 @@ int main(int argc, char* argv[]) {
     appState.ui.formantOutlineColor.w = 1.0f;
 
     appState.ui.isRecording = false;
-    appState.ui.isInTimeScrollAnimation = false;
+    appState.ui.wasTimeCursorHeldLastFrame = false;
+    appState.ui.wasPlayingOrRecordingLastFrame = false;
 
     appState.ui.averageProcessingTime = -1;
 
@@ -150,8 +150,7 @@ int main(int argc, char* argv[]) {
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
-    appState.audioInput.closeStream();
-    Pa_Terminate();
+    appState.audio.terminate();
 
     glfwDestroyWindow(appState.ui.window);
     glfwTerminate();

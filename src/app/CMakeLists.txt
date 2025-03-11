@@ -1,12 +1,12 @@
 add_executable(ReFormant
-    audio/audiodevices.cpp
-    audio/audiodevices.h
-    audio/audioinput.cpp
-    audio/audioinput.h
-    audio/audiooutput.cpp
-    audio/audiooutput.h
-    audio/setup_audio.cpp
-    audio/setup_audio.h
+    audio/audiocontroller.cpp
+    audio/audiocontroller.h
+    audio/audiobackend.h
+    audio/audiodevice.h
+    audio/portaudio/backend.cpp
+    audio/portaudio/backend.h
+    audio/portaudio/device.cpp
+    audio/portaudio/device.h
     audiofiles/audioread.cpp
     audiofiles/audiowrite.cpp
     audiofiles/fileformats.cpp
@@ -43,6 +43,8 @@ add_executable(ReFormant
     processing/thread/consumerthread.h
     processing/thread/processingthread.cpp
     processing/thread/processingthread.h
+    processing/controller/fftmemo/fftmemo.cpp
+    processing/controller/fftmemo/fftmemo.h
     processing/controller/formantcontroller.cpp
     processing/controller/formantcontroller.h
     processing/controller/formants.cpp
@@ -78,13 +80,14 @@ add_executable(ReFormant
 
 target_include_directories(ReFormant PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(ReFormant
-    PRIVATE PortAudio
-            glad glm::glm freetype
-            ImGui::Core ImGui::FreeType
-            ImPlot ImFileDialog
-            fftw3f speex_resampler
-            sndfile rnnoise
+target_link_libraries(ReFormant PRIVATE
+    glad ImGui::Core ImGui::FreeType ImPlot ImFileDialog
+    speex_resampler sndfile rnnoise
+    ${FFTW_FLOAT_LIB}  ${FREETYPE_LIBRARIES} ${PORTAUDIO_LIBRARY}
+)
+
+target_include_directories(ReFormant PRIVATE
+    ${GLM_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${FFTW_INCLUDE_DIRS} ${PORTAUDIO_INCLUDE_DIR}
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)

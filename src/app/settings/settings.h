@@ -4,8 +4,6 @@
 #include <map>
 #include <string>
 
-#include "../audio/audiodevices.h"
-
 namespace reformant {
 
 using SettingsMap = std::map<std::string, std::string>;

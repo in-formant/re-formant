@@ -1,0 +1,40 @@
+FROM ubuntu:24.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+FROM base AS appimage
+RUN apt-get update && apt-get install -y wget
+RUN wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /usr/local/bin/appimagetool
+RUN wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -O /usr/local/bin/linuxdeploy
+RUN wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage -O /usr/local/bin/linuxdeploy-plugin-qt
+RUN chmod 755 /usr/local/bin/appimagetool /usr/local/bin/linuxdeploy /usr/local/bin/linuxdeploy-plugin-qt
+
+FROM base AS rnnoise
+RUN apt-get update && apt-get install -y git cmake gcc g++ wget autoconf libtool
+#RUN git clone https://github.com/mumble-voip/ReNameNoise && \
+#    cd /ReNameNoise && git checkout 2a551ab1261a1d5a5123c34eb6f4d108367d5cb4
+RUN git clone https://gitlab.xiph.org/xiph/rnnoise && \
+    cd /rnnoise && git checkout 70f1d256acd4b34a572f999a05c87bf00b67730d
+WORKDIR /rnn-build
+#RUN cmake -DRENAMENOISE_DEMO_EXECUTABLE=OFF /ReNameNoise
+RUN /rnnoise/autogen.sh && /rnnoise/configure --prefix=/usr/local --enable-x86-rtcd
+RUN make -j$(nproc)
+RUN make install
+#RUN cp librenamenoise.a /usr/local/lib
+#RUN cp /ReNameNoise/include/renamenoise.h /usr/local/include
+
+FROM base AS stripped
+RUN apt-get update && apt-get install -y file
+COPY --from=appimage /usr/local/ /usr/local/
+COPY --from=rnnoise /usr/local/ /usr/local/
+RUN find /usr/local ! -name '*.o' -type f -exec sh -c "file -b {} | grep -Eq '^ELF.*, not stripped' && strip {}" \;
+
+FROM base AS final
+RUN apt-get update && \
+    apt-get install -y file gnupg git cmake gcc g++ \
+    libglfw3-dev libglm-dev libfreetype-dev libfftw3-dev libsndfile-dev portaudio19-dev
+COPY --from=stripped /usr/local/ /usr/local/
+RUN echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/local.conf && ldconfig
+ENV PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/pkgconfig:/usr/local/share/pkgconfig
+RUN mkdir /build 
+WORKDIR /build

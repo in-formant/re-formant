@@ -2,7 +2,6 @@
 
 #include <cfloat>
 #include <cmath>
-#include <iostream>
 
 #include "../../memusage.h"
 #include "../../state.h"
@@ -166,16 +165,19 @@ void SpectrogramController::updateIfNeeded() {
             const double imag = (i > 0) ? m_fftOutput[m_fftLength - 1 - i] : 0;
             const double mag = real * real + imag * imag;
 
-            m_fftMemo[i + slice * numFreqs] = mag;
+            const double magdb = 20.0 * log10(mag <= 0 ? DBL_EPSILON : mag);
+
+            m_fftMemo[i + slice * numFreqs] = magdb;
         }
     }
 }
 
-SpectrogramResults SpectrogramController::getSpectrogramForRange(
+const SpectrogramResults& SpectrogramController::getSpectrogramForRange(
     const double timeMin, const double timeMax, const double timePerPixel) {
     std::lock_guard lockGuard(m_fftMutex);
 
-    SpectrogramResults spec;
+    // To avoid reallocating every time we keep it as a class member.
+    SpectrogramResults& spec = m_specResults;
 
     // Track sample rate.
     const double sampleRate = appState.audioTrack.sampleRate();
@@ -233,7 +235,10 @@ SpectrogramResults SpectrogramController::getSpectrogramForRange(
     spec.numSlices = (endBlock - startBlock) / dsMult;
 
     // Initialize the data to zero.
-    spec.data.resize(spec.numSlices * spec.numFreqs, 0.0);
+    size_t specSz = (size_t)spec.numSlices * (size_t)spec.numFreqs;
+    if (specSz > spec.data.size()) {
+        spec.data.resize(specSz, 0.0);
+    }
 
     // Copy the data from col-major FFT memo to row-major result array.
     int slice = 0;
@@ -243,7 +248,7 @@ SpectrogramResults SpectrogramController::getSpectrogramForRange(
         for (int i = 0; i < spec.numFreqs; ++i) {
             const int index = (spec.numFreqs - 1 - i) * spec.numSlices + slice;
             // Fill with zeroes if not in memo.
-            const int memoIndex = i + block * spec.numFreqs;
+            const int memoIndex = block * spec.numFreqs + i;
             if (memoIndex < m_fftMemo.size()) {
                 spec.data[index] = m_fftMemo[memoIndex];
             } else {
@@ -252,10 +257,6 @@ SpectrogramResults SpectrogramController::getSpectrogramForRange(
         }
         ++slice;
         block += dsMult;
-    }
-
-    for (auto& mag : spec.data) {
-        mag = 20.0 * log10(mag <= 0 ? DBL_EPSILON : mag);
     }
 
     return spec;

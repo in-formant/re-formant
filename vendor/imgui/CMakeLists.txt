@@ -68,7 +68,8 @@ if(NOT imgui_POPULATED)
         target_compile_options(ImGui_ImplGlfw PRIVATE ${EM_GLFW_FLAG})
         target_link_options(ImGui_ImplGlfw PRIVATE ${EM_GLFW_FLAG})
     else()
-        target_link_libraries(ImGui_ImplGlfw PRIVATE glfw)
+        target_link_libraries(ImGui_ImplGlfw PRIVATE ${GLFW3_LIBRARY})
+        target_include_directories(ImGui_ImplGlfw PUBLIC ${GLFW3_INCLUDE_DIR})
     endif()
 
     imgui_library(ImplOpenGL2
@@ -90,7 +91,7 @@ if(NOT imgui_POPULATED)
         DEFINITIONS
             "IMGUI_DISABLE_STB_TRUETYPE_IMPLEMENTATION"
             "IMGUI_ENABLE_FREETYPE"
-        TARGETS freetype)
+        TARGETS Freetype::Freetype)
 
     imgui_library(StdLib
         HEADERS misc/cpp/imgui_stdlib.h

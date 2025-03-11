@@ -1,6 +1,7 @@
 #ifndef REFORMANT_AUDIOFILE_AUDIOFILES_H
 #define REFORMANT_AUDIOFILE_AUDIOFILES_H
 
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -23,8 +24,7 @@ struct AudioFileEncoding {
 
 const std::vector<AudioFileEncoding>& getFormatEncodings();
 
-bool readFile(const std::string& filePath, std::vector<float>& data,
-              int* sampleRate);
+bool readFile(const std::string& filePath, std::vector<float>& data, int* sampleRate);
 
 const std::string& getReadFilter();
 

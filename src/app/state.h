@@ -3,9 +3,7 @@
 
 #include <imgui.h>
 
-#include "audio/audiodevices.h"
-#include "audio/audioinput.h"
-#include "audio/audiooutput.h"
+#include "audio/audiocontroller.h"
 #include "processing/audiotrack.h"
 #include "processing/resampler.h"
 #include "settings/settings.h"
@@ -28,9 +26,7 @@ struct UiState {
     bool showDisplaySettings;
     bool showProfiler;
     // audio settings
-    const AudioHostApiInfo* currentAudioHostApi;
-    const AudioDeviceInfo* currentAudioInDevice;
-    const AudioDeviceInfo* currentAudioOutDevice;
+    AudioBackendType audioBackend;
     // colors
     ImVec4 pitchColor;
     ImVec4 pitchOutlineColor;
@@ -46,7 +42,9 @@ struct UiState {
     double spectrumMinDb;
     double spectrumMaxDb;
     bool isRecording;
-    bool isInTimeScrollAnimation;
+    //-spectrogram scroll
+    bool wasTimeCursorHeldLastFrame;
+    bool wasPlayingOrRecordingLastFrame;
     // profiler
     double averageProcessingTime;
 };
@@ -54,9 +52,7 @@ struct UiState {
 struct AppState {
     Settings settings;
     UiState ui;
-    AudioDevices audioDevices;
-    AudioInput audioInput;
-    AudioOutput audioOutput;
+    AudioController audio;
     Resampler audioOutputResampler;
 
     AudioTrack audioTrack;

@@ -39,7 +39,7 @@ void reformant::ui::dockspace(AppState& appState) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New", "CTRL+N", nullptr)) {
                 std::lock_guard trackGuard(appState.audioTrack.mutex());
-                if (appState.audioOutput.isPlaying()) appState.audioOutput.stopPlaying();
+                if (appState.audio.isPlaying()) appState.audio.stopPlayback();
                 appState.audioTrack.reset();
                 appState.spectrogramController->setTime(0);
                 appState.spectrogramController->forceClear();

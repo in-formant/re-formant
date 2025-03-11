@@ -1,3 +1,5 @@
+project(ImFileDialog)
+
 add_library(ImFileDialog STATIC
     ImFileDialog.cpp
     ImFileDialog.h

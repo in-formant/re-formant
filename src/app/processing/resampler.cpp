@@ -3,6 +3,7 @@
 #include <speex_resampler.h>
 
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 
 using namespace reformant;

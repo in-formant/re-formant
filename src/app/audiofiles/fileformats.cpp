@@ -1,7 +1,6 @@
 #include <sndfile.h>
 
 #include <numeric>
-#include <set>
 
 #include "audiofiles.h"
 
@@ -86,14 +85,13 @@ const std::string& audiofiles::getReadFilter() {
 
     // Some other extensions that are often sound files but aren't included by
     // libsndfile.
-    extensions.insert(extensions.end(),
-                      {".aif", ".ircam", ".snd", ".svx", ".svx8", ".svx16",
-                       ".mp1", ".mp2", ".mp3"});
+    extensions.insert(extensions.end(), {".aif", ".ircam", ".snd", ".svx", ".svx8",
+                                         ".svx16", ".mp1", ".mp2", ".mp3"});
 
     s_readFilter = "Audio files {";
-    s_readFilter += std::accumulate(
-        std::next(extensions.begin()), extensions.end(), extensions[0],
-        [](const auto& a, const auto& b) { return a + "," + b; });
+    s_readFilter +=
+        std::accumulate(std::next(extensions.begin()), extensions.end(), extensions[0],
+                        [](const auto& a, const auto& b) { return a + "," + b; });
     s_readFilter += "}";
 
     return s_readFilter;
@@ -110,8 +108,7 @@ inline bool contains(const std::vector<T>& list, T elem, int* index) {
     return false;
 }
 
-std::vector<AudioFileFormat> audiofiles::getCompatibleFormats(
-    const int sampleRate) {
+std::vector<AudioFileFormat> audiofiles::getCompatibleFormats(const int sampleRate) {
     std::vector<AudioFileFormat> formats;
 
     SF_INFO info;
@@ -121,18 +118,17 @@ std::vector<AudioFileFormat> audiofiles::getCompatibleFormats(
     info.samplerate = sampleRate;
 
     // Header type whitelist:
-    static const std::vector<int> headerWhitelist{
-        SF_FORMAT_WAV,  SF_FORMAT_AIFF, SF_FORMAT_RAW,
-        SF_FORMAT_FLAC, SF_FORMAT_OGG,  SF_FORMAT_MPEG};
+    static const std::vector<int> headerWhitelist{SF_FORMAT_WAV, SF_FORMAT_AIFF,
+                                                  SF_FORMAT_RAW, SF_FORMAT_FLAC,
+                                                  SF_FORMAT_OGG, SF_FORMAT_MPEG};
     static const std::vector<const char*> headerNames{"WAV",  "AIFF", "RAW",
                                                       "FLAC", "OGG",  "MP3"};
 
     // Subtype preference / whitelist:
     static const std::vector<int> encodingPriority{
-        SF_FORMAT_PCM_16, SF_FORMAT_VORBIS, SF_FORMAT_OPUS,
-        SF_FORMAT_MPEG_LAYER_III};
-    static const std::vector<const char*> encodingNames{"16-bit PCM", "Vorbis",
-                                                        "Opus", nullptr};
+        SF_FORMAT_PCM_16, SF_FORMAT_VORBIS, SF_FORMAT_OPUS, SF_FORMAT_MPEG_LAYER_III};
+    static const std::vector<const char*> encodingNames{"16-bit PCM", "Vorbis", "Opus",
+                                                        nullptr};
 
     constexpr size_t bufsz = 32;
     char name[bufsz];
@@ -163,8 +159,7 @@ std::vector<AudioFileFormat> audiofiles::getCompatibleFormats(
                 }
 
                 if (encodingNames[j] != nullptr) {
-                    snprintf(name, bufsz, "%s %s", headerNames[i],
-                             encodingNames[j]);
+                    snprintf(name, bufsz, "%s %s", headerNames[i], encodingNames[j]);
                 } else {
                     snprintf(name, bufsz, "%s", headerNames[i]);
                 }
@@ -199,8 +194,7 @@ std::string audiofiles::getWriteFilter(const int sampleRate) {
 
 // utility
 
-void replaceAll(std::string& str, const std::string& from,
-                const std::string& to) {
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
     if (from.empty()) return;
     size_t start_pos = 0;
     while ((start_pos = str.find(from, start_pos)) != std::string::npos) {

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Terminal=false
+Exec=ReFormant
+Name=ReFormant
+Comment=Real-time formant tracking and voice analysis software
+Icon=ReFormant
+Categories=AudioVideo;Audio
