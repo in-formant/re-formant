@@ -1,20 +1,19 @@
 #ifndef REFORMANT_PROCESSING_PITCHCONTROLLER_H
 #define REFORMANT_PROCESSING_PITCHCONTROLLER_H
 
-#include <fftw3.h>
-
 #include <mutex>
 #include <vector>
 
-#include "../resampler.h"
+#include "pitch/CREPE.h"
+#include "pitch/RAPT.h"
 
 namespace reformant {
-
 struct AppState;
 
 struct PitchResults {
     std::vector<double> times;
     std::vector<double> pitches;
+    std::vector<double> saliences;
 };
 
 class PitchController {
@@ -25,47 +24,26 @@ class PitchController {
 
     void updateIfNeeded();
 
-    const PitchResults& getPitchesForRange(double timeMin, double timeMax, double tpp);
+    PitchResults getPitchesForRange(double timeMin, double timeMax, double tpp);
 
-    double getInterpolatedVoicing(double time);
+    double getInterpolatedVoicing(double time) const;
 
    private:
     AppState& appState;
 
     std::mutex m_mutex;
 
-    Resampler m_dsResampler;
-
-    int m_lastTime;
+    int m_lastTimeRapt;
+    int m_lastTimeCrepe;
     double m_lastSampleRate;
 
     std::vector<double> m_times;
     std::vector<double> m_pitches;
+    std::vector<double> m_saliences;
 
-    int m_minSilenceRunLength;
-    int m_minVoicingRunLength;
-
-    struct PitchPoint {
-        double time, pitch;
-    };
-    std::vector<PitchPoint> m_pitchBuffer;
-
-    PitchResults m_pitchResults;
-
-    double F0min;
-    double F0max;
-    double cand_tr;
-    double lag_wt;
-    double freq_wt;
-    double vtran_c;
-    double vtr_a_c;
-    double vtr_s_c;
-    double vo_bias;
-    double doubl_c;
-    double a_fact;
-    int n_cands;
+    RAPT m_rapt;
+    CREPE m_crepe;
 };
-
 }  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_PITCHCONTROLLER_H

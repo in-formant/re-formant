@@ -9,6 +9,7 @@ using namespace reformant;
 
 namespace {
 void subtractReferenceMean(std::vector<float>& s);
+
 std::vector<float> downsampleSignal(const std::vector<float>& s, int off, int len,
                                     double Fs, double Fds, Resampler& resampler);
 }  // namespace
@@ -93,6 +94,8 @@ void FormantController::updateIfNeeded() {
 
     const auto os = appState.audioTrack.data(trackIndex, analysisLength);
 
+    /*
+    // ### LPC-BSA
     constexpr double Fds = 11000.0;
     const double trackIndexDs = (trackIndex / Fs) * Fds;
 
@@ -111,6 +114,18 @@ void FormantController::updateIfNeeded() {
     // track.form : (nForm, ps.length)
 
     if (track.form.cols() < 1) return;
+    */
+
+    // ### TVLP FTRACK
+    /*constexpr double Fds = 8000.0;
+    const double trackIndexDs = (trackIndex / Fs) * Fds;
+
+    m_dsResampler.setRate(Fs, Fds);
+    m_dsResampler.reset();
+    m_dsResampler.skipZeros();
+    const auto ds = m_dsResampler.process(os);
+
+    ftrack::ArrayXXf formants = m_tracker.process(ds);
 
     // Replace time range with new tracked range.
     const double firstTime = trackIndex / Fs;
@@ -127,22 +142,21 @@ void FormantController::updateIfNeeded() {
         }
     }
 
-    for (int i = 0; i < track.form.rows(); ++i) {
-        for (int j = 0; j < track.form.cols(); ++j) {
-            const double time = (trackIndexDs + track.form(i, j).offset) / Fds;
+    for (int i = 0; i < formants.rows(); ++i) {
+        for (int j = 0; j < formants.cols(); ++j) {
+            const double time = (trackIndex + i / formants.rows() * analysisLength) /
+                                Fs;
             m_times.push_back(time);
-            m_frequencies.push_back(track.form(i, j).freq);
+            m_frequencies.push_back(formants(i, j));
         }
-    }
+    }*/
 }
 
-const FormantResults& FormantController::getFormantsForRange(double timeMin,
-                                                             double timeMax, double tpp) {
+FormantResults FormantController::getFormantsForRange(double timeMin, double timeMax,
+                                                      double tpp) {
     std::lock_guard lockGuard(m_mutex);
 
-    auto& result = m_formantResults;
-    result.times.clear();
-    result.frequencies.clear();
+    FormantResults result;
 
     // Track sample rate.
     const double sampleRate = appState.audioTrack.sampleRate();

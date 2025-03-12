@@ -19,3 +19,6 @@ add_subdirectory(imfiledialog)
 add_subdirectory(glad)
 
 add_subdirectory(speexdsp)
+
+set(BUILD_EXAMPLES OFF)
+add_subdirectory(cppflow)

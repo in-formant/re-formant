@@ -18,6 +18,8 @@ add_executable(ReFormant
     processing/resampler.cpp
     processing/resampler.h
     processing/vector2d.h
+    processing/routines/crepe/CREPE.cpp
+    processing/routines/crepe/CREPE.h
     processing/routines/routines.h
     processing/routines/autoc.cpp
     processing/routines/cwindow.cpp
@@ -45,6 +47,10 @@ add_executable(ReFormant
     processing/thread/processingthread.h
     processing/thread/visualisationthread.cpp
     processing/thread/visualisationthread.h
+    processing/controller/pitch/RAPT.cpp
+    processing/controller/pitch/RAPT.h
+    processing/controller/pitch/CREPE.cpp
+    processing/controller/pitch/CREPE.h
     processing/controller/formantcontroller.cpp
     processing/controller/formantcontroller.h
     processing/controller/formants.cpp
@@ -77,10 +83,6 @@ add_executable(ReFormant
     memusage.h
     state.h
     mini/ini.h
-    processing/routines/eckf/ECKF.cpp
-    processing/routines/eckf/ECKF.h
-    processing/routines/eckf/harmonic_change_detector.cpp
-    processing/routines/eckf/is_silent.cpp
 )
 
 cmrc_add_resource_library(
@@ -99,6 +101,7 @@ target_link_libraries(ReFormant PRIVATE
     glad ImGui::Core ImGui::FreeType ImPlot ImFileDialog
     speex_resampler sndfile rnnoise
     ${FFTW_FLOAT_LIB}  ${FREETYPE_LIBRARIES} ${PORTAUDIO_LIBRARY}
+    cppflow short-time-viterbi ftrack
     res::fonts
 )
 

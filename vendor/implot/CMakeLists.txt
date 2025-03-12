@@ -1,7 +1,7 @@
 FetchContent_Declare(
         implot
         GIT_REPOSITORY https://github.com/in-formant/implot.git
-        GIT_TAG 5d5564216d5bdfc13fda43e7857c004290a3047c # latest scales
+        GIT_TAG 2fb9bb6f7f2cecfcc8388fd23ac26fa55fdfe101 # latest scales
 )
 
 FetchContent_MakeAvailable(implot)

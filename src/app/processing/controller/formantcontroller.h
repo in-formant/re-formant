@@ -3,6 +3,7 @@
 
 #include <fftw3.h>
 
+#include <ftrack/Tracker.hpp>
 #include <mutex>
 #include <vector>
 
@@ -10,7 +11,6 @@
 #include "formants.h"
 
 namespace reformant {
-
 struct AppState;
 
 struct FormantResults {
@@ -26,7 +26,7 @@ class FormantController {
 
     void updateIfNeeded();
 
-    const FormantResults& getFormantsForRange(double timeMin, double timeMax, double tpp);
+    FormantResults getFormantsForRange(double timeMin, double timeMax, double tpp);
 
    private:
     AppState& appState;
@@ -43,9 +43,8 @@ class FormantController {
 
     FormantTracking m_tracking;
 
-    FormantResults m_formantResults;
+    ftrack::Tracker m_tracker;
 };
-
 }  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_FORMANTCONTROLLER_H

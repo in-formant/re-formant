@@ -1,0 +1,7 @@
+*.h5
+*.keras
+*.json
+*.json.zst
+*.tflite
+*.py
+crepe-*/

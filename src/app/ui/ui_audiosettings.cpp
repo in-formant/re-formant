@@ -50,7 +50,9 @@ void reformant::ui::audioSettings(AppState& appState) {
                 if (device && device->isValid() && device->canCapture()) {
                     bool isSelected = (captureDeviceName == device->name());
 
-                    if (ImGui::Selectable(device->name().c_str(), isSelected)) {
+                    std::string name = !device->name().empty() ? device->name() : "##";
+
+                    if (ImGui::Selectable(name.c_str(), isSelected)) {
                         appState.audio->setCaptureDevice(device);
                         appState.audioOutputResampler.setRate(
                             appState.audioTrack.sampleRate(), device->sampleRate());
@@ -68,7 +70,9 @@ void reformant::ui::audioSettings(AppState& appState) {
                 if (device && device->isValid() && device->canPlayback()) {
                     bool isSelected = (playbackDeviceName == device->name());
 
-                    if (ImGui::Selectable(device->name().c_str(), isSelected)) {
+                    std::string name = !device->name().empty() ? device->name() : "##";
+
+                    if (ImGui::Selectable(name.c_str(), isSelected)) {
                         appState.audio->setPlaybackDevice(device);
                     }
                     if (isSelected) ImGui::SetItemDefaultFocus();

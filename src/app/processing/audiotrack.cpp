@@ -84,6 +84,10 @@ std::vector<float> AudioTrack::data(const int offset, int length) const {
     if (length < 0) {
         length = m_track.size() - offset;
     }
+    if (offset + length - 1 >= m_track.size()) {
+        // std::cout << "requested too many samples" << std::endl;
+        length = m_track.size() - offset;
+    }
 
     std::vector<float> copy(length);
     std::copy_n(m_track.begin() + offset, length, copy.begin());

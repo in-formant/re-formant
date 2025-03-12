@@ -1,0 +1,4 @@
+* Endpoint 'serve'
+  args_0 (POSITIONAL_ONLY): TensorSpec(shape=(None, 1024), dtype=tf.float32, name='input')
+Output Type:
+  TensorSpec(shape=(None, 360), dtype=tf.float32, name=None)

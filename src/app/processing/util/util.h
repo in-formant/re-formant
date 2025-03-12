@@ -2,6 +2,7 @@
 #define REFORMANT_PROCESSING_UTIL_UTIL_H
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 namespace reformant {
@@ -151,7 +152,7 @@ std::vector<int> findPeaks(const std::vector<T>& x0, const int sign = +1) {
         else
             ii = 1;
 
-        int maxPeaks = (int)ceil((double)len / 2.0);
+        int maxPeaks = (int)std::ceil((double)len / 2.0);
         std::vector<int> peakLoc(maxPeaks, 0);
         std::vector<double> peakMag(maxPeaks, 0.0);
         int cInd = 1;

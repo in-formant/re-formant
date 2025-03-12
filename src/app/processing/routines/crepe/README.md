@@ -1,0 +1,2 @@
+To prepare the `.json` model files, save the TensorFlow models as keras then use the `keras_export/convert_model.py`
+script from `frugally-deep` to convert them to `.json` files. Then compress them with `zstd`.

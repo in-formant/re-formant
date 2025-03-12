@@ -168,47 +168,67 @@ void reformant::ui::spectrogram(AppState& appState) {
                                         ImPlotHeatmapFlags_None);
                 }
 
-                const auto& pitches = pitchController.getPitchesForRange(
+                const auto pitches = pitchController.getPitchesForRange(
                     rect.X.Min, rect.X.Max, timePerPixel);
 
-                const auto& formants = formantController.getFormantsForRange(
+                const auto formants = formantController.getFormantsForRange(
                     rect.X.Min, rect.X.Max, timePerPixel);
 
                 // Try to draw outlines first so that they are hidden in case of overlap.
 
-                constexpr float circleSize = 3;
+                constexpr ImPlotMarker marker = ImPlotMarker_Diamond;
+                constexpr float markerSize = 5;
                 constexpr float outlineWeight = 3;
                 const ImVec4 transparent{0, 0, 0, 0};
 
                 // pitch outline
-                ImPlot::SetNextMarkerStyle(
-                    ImPlotMarker_Circle, circleSize * appState.ui.scalingFactor,
-                    transparent, outlineWeight * appState.ui.scalingFactor,
-                    appState.ui.pitchOutlineColor);
+                ImPlot::SetNextMarkerStyle(marker, markerSize * appState.ui.scalingFactor,
+                                           transparent,
+                                           outlineWeight * appState.ui.scalingFactor,
+                                           appState.ui.pitchOutlineColor);
                 ImPlot::PlotScatter("##pitch_plot_outline", pitches.times.data(),
                                     pitches.pitches.data(), pitches.times.size());
 
                 // formant outline
-                ImPlot::SetNextMarkerStyle(
-                    ImPlotMarker_Circle, circleSize * appState.ui.scalingFactor,
-                    transparent, outlineWeight * appState.ui.scalingFactor,
-                    appState.ui.formantOutlineColor);
+                ImPlot::SetNextMarkerStyle(marker, markerSize * appState.ui.scalingFactor,
+                                           transparent,
+                                           outlineWeight * appState.ui.scalingFactor,
+                                           appState.ui.formantOutlineColor);
                 ImPlot::PlotScatter("##formant_plot_outline", formants.times.data(),
                                     formants.frequencies.data(), formants.times.size());
 
                 // pitch fill
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle,
-                                           circleSize * appState.ui.scalingFactor,
+                ImPlot::SetNextMarkerStyle(marker, markerSize * appState.ui.scalingFactor,
                                            appState.ui.pitchColor, 0, transparent);
                 ImPlot::PlotScatter("##pitch_plot", pitches.times.data(),
                                     pitches.pitches.data(), pitches.times.size());
 
                 // formant fill
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle,
-                                           circleSize * appState.ui.scalingFactor,
+                ImPlot::SetNextMarkerStyle(marker, markerSize * appState.ui.scalingFactor,
                                            appState.ui.formantColor, 0, transparent);
                 ImPlot::PlotScatter("##formant_plot", formants.times.data(),
                                     formants.frequencies.data(), formants.times.size());
+
+                // pitch
+                /*ImPlot::SetNextLineStyle(appState.ui.pitchColor,
+                                         6.0f * appState.ui.scalingFactor);
+                ImPlot::SetNextMarkerStyle(
+                    ImPlotMarker_Diamond, 6.0f * appState.ui.scalingFactor,
+                    appState.ui.pitchColor, 1.0f * appState.ui.scalingFactor,
+                    appState.ui.pitchOutlineColor);
+
+                std::vector<ImU32> colors(pitches.times.size());
+                for (int i = 0; i < pitches.saliences.size(); ++i) {
+                    float fact = std::pow(pitches.saliences[i], 0.5);
+                    ImColor color = ImPlot::SampleColormap(fact, ImPlotColormap_Hot);
+                    color.Value.w *= fact;
+                    colors[i] = color;
+                }
+                ImPlot::SetNextColorsData(ImPlotCol_Line, colors.data());
+                ImPlot::SetNextColorsData(ImPlotCol_MarkerFill, colors.data());
+
+                ImPlot::PlotLine("##pitch_plot", pitches.times.data(),
+                                 pitches.pitches.data(), pitches.times.size());*/
 
                 double dragTime = spectrogramController.time();
                 if (ImPlot::DragLineX(838492, &dragTime, {1, 1, 1, 1}, 2,
