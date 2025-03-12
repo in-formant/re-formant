@@ -1,7 +1,5 @@
 #include "denoiser.h"
 
-#include <cstdint>
-#include <limits>
 #include <rnnoise.h>
 
 #include <cstdint>
@@ -23,22 +21,25 @@ Denoiser::~Denoiser() {
     delete _p;
 }
 
+int Denoiser::frameSize() { return rnnoise_get_frame_size(); }
+
 std::vector<float> Denoiser::process(const std::vector<float>& in) {
     if (in.size() < rnnoise_get_frame_size()) {
         throw new DenoiserError("Denoising frame too small");
     }
 
-    std::vector<float> out(in);
+    _tmp.resize(in.size());
+    std::copy(in.begin(), in.end(), _tmp.begin());
 
     // Convert to signed 16-bit range
-    for (float& x : out) x *= std::numeric_limits<int16_t>::max();
+    for (float& x : _tmp) x *= std::numeric_limits<int16_t>::max();
 
-    rnnoise_process_frame(_p->st, out.data(), out.data());
+    rnnoise_process_frame(_p->st, _tmp.data(), _tmp.data());
 
     // Convert back to [-1,1] range
-    for (float& x : out) x /= std::numeric_limits<int16_t>::max();
+    for (float& x : _tmp) x /= std::numeric_limits<int16_t>::max();
 
-    return out;
+    return _tmp;
 }
 
 DenoiserError::DenoiserError(const char* msg) : msg(msg) {}

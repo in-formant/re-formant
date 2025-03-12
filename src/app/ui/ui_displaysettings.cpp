@@ -6,7 +6,7 @@ static bool SliderDouble(const char* label, double* v, double v_min, double v_ma
                          const char* format = NULL, ImGuiSliderFlags flags = 0) {
     return SliderScalar(label, ImGuiDataType_Double, v, &v_min, &v_max, format, flags);
 }
-} // namespace ImGui
+}  // namespace ImGui
 
 void reformant::ui::displaySettings(AppState& appState) {
     if (ImGui::Begin("Display settings", &appState.ui.showDisplaySettings)) {
@@ -22,7 +22,7 @@ void reformant::ui::displaySettings(AppState& appState) {
         const double dragSpeed =
             (freqRange <= DBL_EPSILON)
                 ? DBL_EPSILON * 1.0e+13
-                : 0.01 * freqRange; // recover from almost equal axis limits.
+                : 0.01 * freqRange;  // recover from almost equal axis limits.
 
         if (ImGui::SliderDouble("Minimum frequency", &appState.ui.plotFreqMin, 0.0,
                                 appState.ui.plotFreqMax - DBL_EPSILON, "%.0f Hz")) {
@@ -56,13 +56,19 @@ void reformant::ui::displaySettings(AppState& appState) {
 
         ImGui::Separator();
 
-        if (ImGui::ColorEdit3("Pitch colour", &appState.ui.pitchColor.x)) {
+        auto colorEditFlags = ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_Uint8 |
+                              ImGuiColorEditFlags_PickerHueWheel |
+                              ImGuiColorEditFlags_InputRGB;
+
+        if (ImGui::ColorEdit4("Pitch colour", &appState.ui.pitchColor.x,
+                              colorEditFlags)) {
             appState.settings.setPitchColor(&appState.ui.pitchColor.x);
             reformant::ui::setOutlineColor(&appState.ui.pitchColor.x,
                                            &appState.ui.pitchOutlineColor.x);
         }
 
-        if (ImGui::ColorEdit3("Formant colour", &appState.ui.formantColor.x)) {
+        if (ImGui::ColorEdit4("Formant colour", &appState.ui.formantColor.x,
+                              colorEditFlags)) {
             appState.settings.setPitchColor(&appState.ui.formantColor.x);
             reformant::ui::setOutlineColor(&appState.ui.formantColor.x,
                                            &appState.ui.formantOutlineColor.x);

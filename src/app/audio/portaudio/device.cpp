@@ -10,11 +10,11 @@ using namespace reformant;
 
 static int captureCallback(const void *input, void *output, unsigned long frameCount,
                            const PaStreamCallbackTimeInfo *timeInfo,
-                           PaStreamCallbackFlags statusFlags, void *userData);
+                           PaStreamCallbackFlags statusFlags, void *userdata);
 
 static int playbackCallback(const void *input, void *output, unsigned long frameCount,
                             const PaStreamCallbackTimeInfo *timeInfo,
-                            PaStreamCallbackFlags statusFlags, void *userData);
+                            PaStreamCallbackFlags statusFlags, void *userdata);
 
 AudioDevicePortAudio::AudioDevicePortAudio(AudioController &controller,
                                            PaDeviceIndex deviceIndex)
@@ -24,7 +24,9 @@ AudioDevicePortAudio::AudioDevicePortAudio(AudioController &controller,
       m_deviceInfo(Pa_GetDeviceInfo(deviceIndex)),
       m_name(m_deviceInfo->name),
       m_isCapturing(false),
-      m_isPlaying(false) {}
+      m_captureStream(nullptr),
+      m_isPlaying(false),
+      m_playbackStream(nullptr) {}
 
 std::string AudioDevicePortAudio::name() const { return m_name; }
 
@@ -58,6 +60,11 @@ bool AudioDevicePortAudio::startCapture() {
         return false;
     }
 
+    Pa_SetStreamFinishedCallback(m_captureStream, [](void *userdata) {
+        auto that = static_cast<AudioDevicePortAudio *>(userdata);
+        that->m_isCapturing = false;
+    });
+
     m_isCapturing = true;
 
     err = Pa_StartStream(m_captureStream);
@@ -85,6 +92,8 @@ bool AudioDevicePortAudio::stopCapture() {
                   << std::endl;
     }
 
+    m_captureStream = nullptr;
+
     return true;
 }
 
@@ -100,6 +109,17 @@ bool AudioDevicePortAudio::startPlayback() {
         return false;
     }
 
+    PaError err;
+
+    // Close stream if it was not closed.
+    if (m_playbackStream != nullptr && !Pa_IsStreamStopped(m_playbackStream)) {
+        err = Pa_CloseStream(m_playbackStream);
+        if (err != paNoError) {
+            std::cout << "AudioDevicePortAudio::startPlayback: " << Pa_GetErrorText(err)
+                      << std::endl;
+        }
+    }
+
     PaStreamParameters params;
     params.channelCount = 1;
     params.device = m_deviceIndex;
@@ -107,14 +127,19 @@ bool AudioDevicePortAudio::startPlayback() {
     params.sampleFormat = paFloat32;
     params.suggestedLatency = m_deviceInfo->defaultLowOutputLatency;
 
-    PaError err = Pa_OpenStream(&m_playbackStream, nullptr, &params,
-                                m_deviceInfo->defaultSampleRate, 1024, paNoFlag,
-                                &::playbackCallback, this);
+    err = Pa_OpenStream(&m_playbackStream, nullptr, &params,
+                        m_deviceInfo->defaultSampleRate, 1024, paNoFlag,
+                        &::playbackCallback, this);
     if (err != paNoError) {
         std::cout << "AudioDevicePortAudio::startPlayback: " << Pa_GetErrorText(err)
                   << std::endl;
         return false;
     }
+
+    Pa_SetStreamFinishedCallback(m_playbackStream, [](void *userdata) {
+        auto that = static_cast<AudioDevicePortAudio *>(userdata);
+        that->m_isPlaying = false;
+    });
 
     m_isPlaying = true;
 
@@ -143,6 +168,10 @@ bool AudioDevicePortAudio::stopPlayback() {
                   << std::endl;
     }
 
+    m_playbackStream = nullptr;
+
+    m_controller.clearPlaybackFrames();
+
     return true;
 }
 
@@ -150,22 +179,22 @@ bool AudioDevicePortAudio::stopPlayback() {
 
 void AudioDevicePortAudio::invalidate() { m_isValid = false; }
 
-void AudioDevicePortAudio::pushCaptureFrames(const float *frm, unsigned long frmCount) {
-    m_controller.pushCaptureFrames(frm, frmCount);
+bool AudioDevicePortAudio::pushCaptureFrames(const float *frm, unsigned long frmCount) {
+    return m_controller.pushCaptureFrames(frm, frmCount);
 }
 
-void AudioDevicePortAudio::pullPlaybackFrames(float *frm, unsigned long frmCount) {
-    m_controller.pullPlaybackFrames(frm, frmCount);
+bool AudioDevicePortAudio::pullPlaybackFrames(float *frm, unsigned long frmCount) {
+    return m_controller.pullPlaybackFrames(frm, frmCount);
 }
 
 static int captureCallback(const void *input, void *output, unsigned long frameCount,
                            const PaStreamCallbackTimeInfo *timeInfo,
-                           PaStreamCallbackFlags statusFlags, void *userData) {
+                           PaStreamCallbackFlags statusFlags, void *userdata) {
     (void)output;
     (void)timeInfo;
     (void)statusFlags;
 
-    auto that = static_cast<AudioDevicePortAudio *>(userData);
+    auto that = static_cast<AudioDevicePortAudio *>(userdata);
 
     that->pushCaptureFrames(static_cast<const float *>(input), frameCount);
 
@@ -174,14 +203,14 @@ static int captureCallback(const void *input, void *output, unsigned long frameC
 
 static int playbackCallback(const void *input, void *output, unsigned long frameCount,
                             const PaStreamCallbackTimeInfo *timeInfo,
-                            PaStreamCallbackFlags statusFlags, void *userData) {
+                            PaStreamCallbackFlags statusFlags, void *userdata) {
     (void)output;
     (void)timeInfo;
     (void)statusFlags;
 
-    auto that = static_cast<AudioDevicePortAudio *>(userData);
+    auto that = static_cast<AudioDevicePortAudio *>(userdata);
 
-    that->pullPlaybackFrames(static_cast<float *>(output), frameCount);
+    bool full = that->pullPlaybackFrames(static_cast<float *>(output), frameCount);
 
-    return that->isPlaying() ? paContinue : paComplete;
+    return full ? paContinue : paComplete;
 }

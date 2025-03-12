@@ -21,7 +21,7 @@ struct SpectrogramResults {
 };
 
 class SpectrogramController final {
-public:
+   public:
     SpectrogramController(AppState& appState);
 
     ~SpectrogramController();
@@ -52,21 +52,18 @@ public:
 
     const SpectrogramResults& getSpectrogramForRange(double timeMin, double timeMax,
                                                      double tpp);
-<<<<<<< HEAD
-=======
 
-private:
+   private:
     void updateSpectrogramResults();
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
     AppState& appState;
 
-    volatile double m_time; // volatile because modified from another thread
+    volatile double m_time;  // volatile because modified from another thread
     volatile int m_timeSamples;
 
     std::mutex m_fftMutex;
 
-    int m_fftLength; // nonvolatile bc only modified from UI thread
+    int m_fftLength;  // nonvolatile bc only modified from UI thread
     fftwf_plan m_fftPlan;
     float* m_fftInput;
     float* m_fftOutput;
@@ -80,18 +77,13 @@ private:
 
     std::vector<float> m_fftMemo;
 
-<<<<<<< HEAD
-    double m_lastSpecRequestTimeMin;
-    SpectrogramResults m_specResults;
-=======
     SpectrogramResults m_specResults;
 
     bool m_needSpecUpdate;
     double m_specTimeMin;
     double m_specTimeMax;
     double m_specTimePerPixel;
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 };
-} // namespace reformant
+}  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_SPECTROGRAMCONTROLLER_H

@@ -259,7 +259,7 @@ FormantTrack FormantTracking::track(const PoleArray& ps) {
                     (FBIAS * fbias) + (bfact * berr) + merger + (ffact * ferr) + minErr;
             }
         } /* end for each CURRENT mapping... */
-    }     /* end for all analysis frames... */
+    } /* end for all analysis frames... */
 
     /* Pick the candidate in the final frame with the lowest cost. */
     /* Starting with that min.-cost cand., work back thru the lattice. */
@@ -316,7 +316,7 @@ FormantTrack FormantTracking::track(const PoleArray& ps) {
                 ba(j, i) = NOBAND;
             }
         } /* note that mincan will remain =-1 if no candidates */
-    }     /* end unpacking formant tracks from the dp lattice */
+    } /* end unpacking formant tracks from the dp lattice */
 
     FormantTrack track;
     track.form.resize(nForm, ps.length);

@@ -1,10 +1,6 @@
 #include <sndfile.h>
 
 #include <numeric>
-<<<<<<< HEAD
-=======
-#include <cstring>
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
 #include "audiofiles.h"
 

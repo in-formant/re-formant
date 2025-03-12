@@ -16,7 +16,7 @@
     "clangd.arguments": ["-log=verbose", 
                          "-pretty", 
                          "--background-index", 
-                        "--compile-commands-dir=build/Debug_none_none"
+                        "--compile-commands-dir=build/RelWithDebInfo_none_none"
                     ],
     "editor.codeActionsOnSave": {
         "source.fixAll": "always"

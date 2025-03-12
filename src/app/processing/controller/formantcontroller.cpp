@@ -33,12 +33,7 @@ void FormantController::forceClear(bool lock) {
 }
 
 void FormantController::updateIfNeeded() {
-    using namespace std::chrono_literals;
-
-    // Just return if we couldn't lock, this isn't important because it's
-    // ran periodically, and it avoids a potential deadlock.
-    const std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
-    if (!trackLock.owns_lock()) return;
+    std::shared_lock trackLock(appState.audioTrack.mutex());
 
     std::lock_guard lockGuard(m_mutex);
 
@@ -141,11 +136,13 @@ void FormantController::updateIfNeeded() {
     }
 }
 
-FormantResults FormantController::getFormantsForRange(double timeMin, double timeMax,
-                                                      double tpp) {
+const FormantResults& FormantController::getFormantsForRange(double timeMin,
+                                                             double timeMax, double tpp) {
     std::lock_guard lockGuard(m_mutex);
 
-    FormantResults result;
+    auto& result = m_formantResults;
+    result.times.clear();
+    result.frequencies.clear();
 
     // Track sample rate.
     const double sampleRate = appState.audioTrack.sampleRate();

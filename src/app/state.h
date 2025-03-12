@@ -53,7 +53,8 @@ struct UiState {
 struct AppState {
     Settings settings;
     UiState ui;
-    AudioController audio;
+    AudioController* audio;
+    Resampler audioOutputResamplerTo48kHz;
     Resampler audioOutputResampler;
 
     AudioTrack audioTrack;
@@ -66,6 +67,6 @@ struct AppState {
     ProcessingThread* processingThread;
     VisualisationThread* visualisationThread;
 };
-} // namespace reformant
+}  // namespace reformant
 
 #endif  // REFORMANT_STATE_H

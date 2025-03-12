@@ -1,6 +1,6 @@
-#include "ECKF.h"
-
 #include <cmath>
+
+#include "ECKF.h"
 
 namespace {
 double geomean(const std::vector<float>& data) {
@@ -25,7 +25,7 @@ double mean(const std::vector<float>& x) {
     }
     return sum / static_cast<double>(x.size());
 }
-}
+}  // namespace
 
 bool ECKF::is_silent(const std::vector<double>& x) {
     constexpr double sf_threshold = 0.45;
@@ -50,7 +50,7 @@ bool ECKF::is_silent(const std::vector<double>& x) {
 }
 
 void ECKF::pwelch(const std::vector<double>& x) {
-    std::ranges::copy(x, psdw.begin());
+    std::copy(x.begin(), x.end(), psdw.begin());
     for (int i = 0; i < x.size(); ++i) {
         psdw[i] *= w[i];
     }

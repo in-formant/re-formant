@@ -5,13 +5,12 @@
 #include "audiofiles.h"
 
 bool reformant::audiofiles::readFile(const std::string& filePath,
-                                 std::vector<float>& data, int* sampleRate) {
+                                     std::vector<float>& data, int* sampleRate) {
     SF_INFO sfinfo = {};
-    SNDFILE *sndfile = sf_open(filePath.c_str(), SFM_READ, &sfinfo);
+    SNDFILE* sndfile = sf_open(filePath.c_str(), SFM_READ, &sfinfo);
 
     if (sndfile == nullptr) {
-        std::cerr << "sndfile: error opening file:" << sf_strerror(nullptr)
-                  << std::endl;
+        std::cerr << "sndfile: error opening file:" << sf_strerror(nullptr) << std::endl;
         return false;
     }
 
@@ -25,8 +24,7 @@ bool reformant::audiofiles::readFile(const std::string& filePath,
     sf_readf_float(sndfile, multichannelData.data(), length);
 
     if (int err = sf_close(sndfile); err != 0) {
-        std::cerr << "sndfile: error closing file:" << sf_error_number(err)
-                  << std::endl;
+        std::cerr << "sndfile: error closing file:" << sf_error_number(err) << std::endl;
         return false;
     }
 

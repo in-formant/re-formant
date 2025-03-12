@@ -10,16 +10,10 @@ struct ResamplerPrivate;
 
 class Resampler final {
    public:
-<<<<<<< HEAD
-    Resampler(int quality = 10, bool skipZeros = false);
-    Resampler(double inFs, double outFs, int quality = 10, bool skipZeros = false);
-    virtual ~Resampler();
-=======
     explicit Resampler(int quality = 10, bool skipZeros = false);
     explicit Resampler(double inFs, double outFs, int quality = 10,
-              bool skipZeros = false);
+                       bool skipZeros = false);
     ~Resampler();
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
     [[nodiscard]] bool isValid() const;
 

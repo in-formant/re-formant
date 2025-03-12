@@ -33,8 +33,8 @@ class AudioDevicePortAudio : public AudioDevice {
     // - impl
 
     void invalidate();
-    void pushCaptureFrames(const float* frm, unsigned long frmCount) override;
-    void pullPlaybackFrames(float* frm, unsigned long frmCount) override;
+    bool pushCaptureFrames(const float* frm, unsigned long frmCount) override;
+    bool pullPlaybackFrames(float* frm, unsigned long frmCount) override;
 
    private:
     bool m_isValid;

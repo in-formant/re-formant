@@ -25,7 +25,7 @@ class PitchController {
 
     void updateIfNeeded();
 
-    PitchResults getPitchesForRange(double timeMin, double timeMax, double tpp);
+    const PitchResults& getPitchesForRange(double timeMin, double timeMax, double tpp);
 
     double getInterpolatedVoicing(double time);
 
@@ -49,6 +49,8 @@ class PitchController {
         double time, pitch;
     };
     std::vector<PitchPoint> m_pitchBuffer;
+
+    PitchResults m_pitchResults;
 
     double F0min;
     double F0max;

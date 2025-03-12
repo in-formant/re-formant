@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#include "../processing/controller/spectrogramcontroller.h"
+#include "../state.h"
+
 #ifdef REFORMANT_HAS_PIPEWIRE
     #include "pipewire/backend.h"
 #endif
@@ -10,7 +13,8 @@
 
 using namespace reformant;
 
-AudioController::AudioController() : m_captureBuffer(16384), m_playbackBuffer(16384) {
+AudioController::AudioController(AppState& appState)
+    : appState(appState), m_captureBuffer(16384), m_playbackBuffer(4096) {
 #ifdef REFORMANT_HAS_PIPEWIRE
     m_backends.push_back(std::make_unique<AudioBackendPipewire>(*this));
 #endif
@@ -190,7 +194,7 @@ bool AudioController::startPlayback() {
                   << " is not a playback device" << std::endl;
         return false;
     }
-    if (!device->isPlaying()) {
+    if (device->isPlaying()) {
         std::cout << "AudioController::startPlayback: already playing" << std::endl;
         return false;
     }
@@ -216,6 +220,14 @@ bool AudioController::stopPlayback() {
 }
 
 // To be called from the the non-audio threads:
+
+size_t AudioController::availCaptureFrames() const {
+    return m_captureBuffer.size_approx();
+}
+
+size_t AudioController::missingPlaybackFrames() const {
+    return m_playbackBuffer.max_capacity() - m_playbackBuffer.size_approx();
+}
 
 unsigned long AudioController::pullCaptureFrames(float* frm, unsigned long frmCount) {
     // notify if there was overflow
@@ -246,22 +258,26 @@ unsigned long AudioController::pushPlaybackFrames(const float* frm,
     return frmCount;
 }
 
+void AudioController::clearPlaybackFrames() { while (m_playbackBuffer.pop()); }
+
 // To be called from the audio thread:
 
-void AudioController::pushCaptureFrames(const float* frm, unsigned long frmCount) {
+bool AudioController::pushCaptureFrames(const float* frm, unsigned long frmCount) {
     for (unsigned long i = 0; i < frmCount; ++i) {
         if (!m_captureBuffer.try_enqueue(frm[i])) {
             m_captureBufferOverflow.store(true);
-            break;
+            return false;
         }
     }
+    return true;
 }
 
-void AudioController::pullPlaybackFrames(float* frm, unsigned long frmCount) {
+bool AudioController::pullPlaybackFrames(float* frm, unsigned long frmCount) {
     for (unsigned long i = 0; i < frmCount; ++i) {
         if (!m_playbackBuffer.try_dequeue(frm[i])) {
             m_playbackBufferUnderrun.store(true);
-            break;
+            return false;
         }
     }
+    return true;
 }

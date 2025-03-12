@@ -61,7 +61,6 @@ imgui_library(ImplGlfw
         HEADERS backends/imgui_impl_glfw.h
         SOURCES backends/imgui_impl_glfw.cpp
         INCLUDE_DIRECTORIES backends)
-<<<<<<< HEAD
         
     if(EMSCRIPTEN)
         set(EM_GLFW_FLAG "SHELL:-s USE_GLFW=3")
@@ -71,8 +70,6 @@ imgui_library(ImplGlfw
         target_link_libraries(ImGui_ImplGlfw PRIVATE ${GLFW3_LIBRARY})
         target_include_directories(ImGui_ImplGlfw PUBLIC ${GLFW3_INCLUDE_DIR})
     endif()
-=======
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
 if (EMSCRIPTEN)
     set(EM_GLFW_FLAG "SHELL:-s USE_GLFW=3")
@@ -99,15 +96,9 @@ imgui_library(FreeType
         HEADERS misc/freetype/imgui_freetype.h
         SOURCES misc/freetype/imgui_freetype.cpp
         DEFINITIONS
-<<<<<<< HEAD
             "IMGUI_DISABLE_STB_TRUETYPE_IMPLEMENTATION"
             "IMGUI_ENABLE_FREETYPE"
         TARGETS Freetype::Freetype)
-=======
-        "IMGUI_DISABLE_STB_TRUETYPE_IMPLEMENTATION"
-        "IMGUI_ENABLE_FREETYPE"
-        TARGETS freetype)
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
 imgui_library(StdLib
         HEADERS misc/cpp/imgui_stdlib.h

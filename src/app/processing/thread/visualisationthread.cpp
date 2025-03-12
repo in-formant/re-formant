@@ -11,12 +11,12 @@
 using namespace std::chrono;
 using namespace reformant;
 
-VisualisationThread::VisualisationThread(AppState& appState, const int approxProcessingDelayMs)
+VisualisationThread::VisualisationThread(AppState& appState,
+                                         const int approxProcessingDelayMs)
     : appState(appState),
       m_approxProcessingDelayMs(approxProcessingDelayMs),
       m_isRunning(false),
-      m_processingTime(0) {
-}
+      m_processingTime(0) {}
 
 void VisualisationThread::start() {
     m_isRunning = true;
@@ -48,8 +48,8 @@ void VisualisationThread::run() {
                 milliseconds(m_approxProcessingDelayMs - elapsed));
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
-            std::cout << "Processing (visualisation) took longer than " << m_approxProcessingDelayMs
-                << " ms" << std::endl;
+            std::cout << "Processing (visualisation) took longer than "
+                      << m_approxProcessingDelayMs << " ms" << std::endl;
         }
 
         lastTime = steady_clock::now();

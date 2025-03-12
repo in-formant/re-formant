@@ -6,8 +6,6 @@
 #include "../processing/thread/processingthread.h"
 #include "ui_private.h"
 
-#include <cmath>
-
 void reformant::ui::profiler(AppState& appState) {
     static std::array<float, 4000> frameTimes{};
 
@@ -38,7 +36,6 @@ void reformant::ui::profiler(AppState& appState) {
         }
 
         ImGui::Text("Time spent processing: %d ms",
-<<<<<<< HEAD
                     (int)std::round(appState.ui.averageProcessingTime));
 
         ImGui::Separator();
@@ -61,11 +58,6 @@ void reformant::ui::profiler(AppState& appState) {
             ImPlot::PlotLine("##frametimes", frameTimes.data(), frameTimes.size());
             ImPlot::EndPlot();
         }
-=======
-                    static_cast<int>(std::round(appState.ui.averageProcessingTime)));
-
-        ImGui::Text("FPS: %d", static_cast<int>(std::round(ImGui::GetIO().Framerate)));
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
     }
     ImGui::End();
 

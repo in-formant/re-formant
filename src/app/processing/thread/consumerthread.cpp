@@ -1,10 +1,11 @@
 #include "consumerthread.h"
 
 #include <chrono>
-#include <functional>
+#include <cmath>
 #include <iostream>
 
 #include "../../state.h"
+#include "../controller/spectrogramcontroller.h"
 
 using namespace std::chrono;
 using namespace reformant;
@@ -12,8 +13,7 @@ using namespace reformant;
 ConsumerThread::ConsumerThread(AppState& appState, const int approxRetrieveDelayMs)
     : appState(appState),
       m_approxRetrieveDelayMs(approxRetrieveDelayMs),
-      m_isRunning(false) {
-}
+      m_isRunning(false) {}
 
 void ConsumerThread::start() {
     m_isRunning = true;
@@ -28,26 +28,63 @@ void ConsumerThread::terminate() {
 void ConsumerThread::run() const {
     auto lastTime = steady_clock::now();
 
-    /*appState.audioInput.setBufferCallback(
-        [&](const std::vector<float>& buffer) {
-            std::lock_guard trackGuard(appState.audioTrack.mutex());
-            appState.audioTrack.append(buffer,
-                                       appState.audioInput.sampleRate());
-        });*/
+    unsigned long inBufSize(Denoiser::frameSize());
+    unsigned long outTrackBufSize(4096);
+    unsigned long framesRetrieved;
+    std::vector<float> inBuf(inBufSize);
 
-    unsigned long bufferSize(4096), framesRetrieved;
-    std::vector<float> buffer(bufferSize);
+    double captureSampleRate = 48000;
+    double playbackSampleRate = 48000;
 
     while (m_isRunning) {
-        // Retrieve buffers into track.
-        buffer.resize(bufferSize);
-        framesRetrieved = appState.audio.pullCaptureFrames(buffer.data(), bufferSize);
-        buffer.resize(framesRetrieved);
-        if (framesRetrieved > 0) {
-            std::lock_guard trackGuard(appState.audioTrack.mutex());
-            appState.audioTrack.append(buffer, 48000);
+        auto currentCaptureDevice = appState.audio->currentCaptureDevice().lock();
+        if (currentCaptureDevice) {
+            captureSampleRate = currentCaptureDevice->sampleRate();
         }
-        // appState.audioInput.retrieveBuffers();
+
+        auto currentPlaybackDevice = appState.audio->currentPlaybackDevice().lock();
+        if (currentPlaybackDevice) {
+            playbackSampleRate = currentPlaybackDevice->sampleRate();
+        }
+
+        // Move captured audio to track.
+        while (appState.audio->availCaptureFrames() > inBufSize) {
+            inBuf.resize(inBufSize);
+            framesRetrieved = appState.audio->pullCaptureFrames(inBuf.data(), inBufSize);
+            inBuf.resize(framesRetrieved);
+            if (framesRetrieved > 0) {
+                appState.audioTrack.append(inBuf, captureSampleRate);
+            }
+        }
+
+        // Move playback audio to buffer.
+        if (appState.audio->isPlaying()) {
+            const int trackSamples = appState.audioTrack.sampleCount();
+            int offset = appState.spectrogramController->timeSamples();
+
+            appState.audioOutputResamplerTo48kHz.setRate(appState.audioTrack.sampleRate(),
+                                                         48000);
+            appState.audioOutputResampler.setRate(48000, playbackSampleRate);
+
+            int copyLength = std::min<int>(outTrackBufSize, trackSamples - offset);
+
+            if (copyLength > 0) {
+                std::vector<float> chunkOut;
+                do {
+                    auto chunk = appState.audioTrack.data(offset, copyLength);
+
+                    auto chunk48kHz = appState.audioOutputResamplerTo48kHz.process(chunk);
+
+                    chunkOut = appState.audioOutputResampler.process(chunk48kHz);
+
+                    appState.audio->pushPlaybackFrames(chunkOut.data(), chunkOut.size());
+
+                    offset += outTrackBufSize;
+
+                    copyLength = std::min<int>(outTrackBufSize, trackSamples - offset);
+                } while (copyLength > 0);
+            }
+        }
 
         // Wait until the appropriate duration has elapsed.
         const auto now = steady_clock::now();
@@ -57,13 +94,8 @@ void ConsumerThread::run() const {
             std::this_thread::sleep_for(milliseconds(m_approxRetrieveDelayMs - elapsed));
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
-<<<<<<< HEAD
             std::cout << "Retrieving took longer than " << m_approxRetrieveDelayMs
                       << " ms" << std::endl;
-=======
-            std::cout << "Retrieving took longer than "
-                << m_approxRetrieveDelayMs << " ms" << std::endl;
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
         }
 
         lastTime = steady_clock::now();

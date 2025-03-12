@@ -9,11 +9,14 @@
 
 using namespace reformant;
 
-WaveformController::WaveformController(AppState& appState) : appState(appState),
-    m_lastSampleRate(-1), m_waveResults{}, m_needWaveUpdate(false), m_waveTimeMin(0),
-    m_waveTimeMax(0),
-    m_waveTimePerPixel(0) {
-}
+WaveformController::WaveformController(AppState& appState)
+    : appState(appState),
+      m_lastSampleRate(-1),
+      m_waveResults{},
+      m_needWaveUpdate(false),
+      m_waveTimeMin(0),
+      m_waveTimeMax(0),
+      m_waveTimePerPixel(0) {}
 
 WaveformController::~WaveformController() = default;
 
@@ -27,13 +30,6 @@ void WaveformController::forceClear(bool lock) {
 }
 
 void WaveformController::updateIfNeeded() {
-    using namespace std::chrono_literals;
-
-    // Just return if we couldn't lock, this isn't important because it's
-    // ran periodically, and it avoids a potential deadlock.
-    std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
-    if (!trackLock.owns_lock()) return;
-
     std::lock_guard lockGuard(m_mutex);
 
     // Track sample rate.
@@ -50,8 +46,9 @@ void WaveformController::updateIfNeeded() {
     }
 }
 
-const WaveformResults& WaveformController::getWaveformForRange(
-    double timeMin, double timeMax, double timePerPixel) {
+const WaveformResults& WaveformController::getWaveformForRange(double timeMin,
+                                                               double timeMax,
+                                                               double timePerPixel) {
     std::lock_guard lockGuard(m_mutex);
 
     const double sampleRate = appState.audioTrack.sampleRate();
@@ -66,6 +63,8 @@ const WaveformResults& WaveformController::getWaveformForRange(
 }
 
 void WaveformController::updateWaveformResults() {
+    std::shared_lock trackLock(appState.audioTrack.mutex());
+
     auto& wave = m_waveResults;
 
     const double sampleRate = appState.audioTrack.sampleRate();
@@ -80,10 +79,10 @@ void WaveformController::updateWaveformResults() {
         return;
     }
 
-    const int startIndex = std::clamp(static_cast<int>(timeMin * sampleRate), 0,
-                                      trackSampleCount - 1);
-    const int stopIndex = std::clamp(static_cast<int>(timeMax * sampleRate), 0,
-                                     trackSampleCount - 1);
+    const int startIndex =
+        std::clamp(static_cast<int>(timeMin * sampleRate), 0, trackSampleCount - 1);
+    const int stopIndex =
+        std::clamp(static_cast<int>(timeMax * sampleRate), 0, trackSampleCount - 1);
     const int rangeSampleCount = stopIndex - startIndex + 1;
 
     const double actualTimeMin = startIndex / sampleRate;
@@ -123,8 +122,8 @@ void WaveformController::updateWaveformResults() {
     const int roundedStartIndex = (startIndex / windowSize) * windowSize;
 
     int chunkStartIndex = roundedStartIndex;
-    while (chunkStartIndex < stopIndex && chunkStartIndex + windowSize <
-           trackSampleCount) {
+    while (chunkStartIndex < stopIndex &&
+           chunkStartIndex + windowSize < trackSampleCount) {
         float min = std::numeric_limits<double>::max();
         float max = std::numeric_limits<double>::lowest();
         double sumOfSquares = 0;
@@ -137,9 +136,7 @@ void WaveformController::updateWaveformResults() {
 
         const double rms = sqrt(sumOfSquares / windowSize);
 
-        wave.times.push_back(
-            (chunkStartIndex + (windowSize + 1) / 2.0) /
-            sampleRate);
+        wave.times.push_back((chunkStartIndex + (windowSize + 1) / 2.0) / sampleRate);
         wave.mins.push_back(min);
         wave.maxs.push_back(max);
         wave.rms1.push_back(rms);

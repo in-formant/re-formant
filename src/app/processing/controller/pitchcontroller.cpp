@@ -4,6 +4,7 @@
 #include <complex>
 #include <iostream>
 #include <limits>
+#include <shared_mutex>
 
 #include "../../state.h"
 #include "../util/util.h"
@@ -26,7 +27,7 @@ void calculateOriginalNCCF(const std::vector<float>& s, int off, double Fs, doub
 
 std::vector<std::pair<double, double> > findPeaksWithThreshold(
     const std::vector<double>& nccf, double cand_tr, int n_cands, bool paraInterp);
-} // namespace
+}  // namespace
 
 PitchController::PitchController(AppState& appState)
     : appState(appState),
@@ -71,12 +72,7 @@ void PitchController::forceClear(bool lock) {
 }
 
 void PitchController::updateIfNeeded() {
-    using namespace std::chrono_literals;
-
-    // Just return if we couldn't lock, this isn't important because it's
-    // ran periodically, and it avoids a potential deadlock.
-    std::unique_lock trackLock(appState.audioTrack.mutex(), 50ms);
-    if (!trackLock.owns_lock()) return;
+    std::shared_lock trackLock(appState.audioTrack.mutex());
 
     std::lock_guard lockGuard(m_mutex);
 
@@ -266,7 +262,8 @@ void calculateOriginalNCCF(const std::vector<float>& s, const int off, const dou
 
     std::fill(nccf.begin(), nccf.end(), 0);
 
-    double e0; {
+    double e0;
+    {
         int j = 0;
         double v = 0;
         for (int l = j; l < j + n; ++l) {
@@ -323,13 +320,15 @@ std::vector<std::pair<double, double> > findPeaksWithThreshold(
 
     return peaks;
 }
-} // namespace
+}  // namespace
 
-PitchResults PitchController::getPitchesForRange(double timeMin, double timeMax,
-                                                 double timePerPixel) {
+const PitchResults& PitchController::getPitchesForRange(double timeMin, double timeMax,
+                                                        double timePerPixel) {
     std::lock_guard lockGuard(m_mutex);
 
-    PitchResults result;
+    auto& result = m_pitchResults;
+    result.times.clear();
+    result.pitches.clear();
 
     // Track sample rate.
     const double sampleRate = appState.audioTrack.sampleRate();

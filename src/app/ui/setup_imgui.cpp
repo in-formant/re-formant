@@ -1,4 +1,5 @@
 #include <glad/glad.h>
+
 #include <cmrc/cmrc.hpp>
 // clang-format off
 #include <imgui.h>
@@ -20,12 +21,7 @@ void reformant::ui::setupImGui(AppState& appState) {
     ImGui::CreateContext();
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-<<<<<<< HEAD
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-=======
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
@@ -44,11 +40,6 @@ void reformant::ui::setupImGui(AppState& appState) {
     io.Fonts->FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_ForceAutoHint;
     io.Fonts->FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LightHinting;
 
-<<<<<<< HEAD
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(g_interMedium_compressed_data_base85,
-                                                   fontSize, nullptr,
-                                                   io.Fonts->GetGlyphRangesDefault());
-=======
     // Font files.
     auto fs = cmrc::fonts::get_filesystem();
 
@@ -63,47 +54,39 @@ void reformant::ui::setupImGui(AppState& appState) {
     std::copy(faRegular.begin(), faRegular.end(), faRegularBuf.get());
     std::copy(faSolid.begin(), faSolid.end(), faSolidBuf.get());
     std::copy(interMedium.begin(), interMedium.end(), interMediumBuf.get());
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 
     ImFontConfig config;
     config.FontDataOwnedByAtlas = false;
 
     static constexpr ImWchar interRanges[] = {
-        0x0020, 0x00FF, // Basic Latin + Latin Supplement
-        0x0370, 0x03FF, // Greek and Coptic
-        0x0400, 0x052F, // Cyrillic + Cyrillic Supplement
-        0x2DE0, 0x2DFF, // Cyrillic Extended-A
-        0xA640, 0xA69F, // Cyrillic Extended-B
+        0x0020, 0x00FF,  // Basic Latin + Latin Supplement
+        0x0370, 0x03FF,  // Greek and Coptic
+        0x0400, 0x052F,  // Cyrillic + Cyrillic Supplement
+        0x2DE0, 0x2DFF,  // Cyrillic Extended-A
+        0xA640, 0xA69F,  // Cyrillic Extended-B
         0,
     };
 
     static constexpr ImWchar iconsRange[] = {
-        0xE000, 0xF8FF,
+        0xE000,
+        0xF8FF,
         0,
     };
 
-    io.Fonts->AddFontFromMemoryTTF(interMediumBuf.get(), interMedium.size(),
-                                   fontSize,
-                                   &config,
-                                   interRanges);
+    io.Fonts->AddFontFromMemoryTTF(interMediumBuf.get(), interMedium.size(), fontSize,
+                                   &config, interRanges);
 
     config.MergeMode = true;
 
     config.GlyphMinAdvanceX = fontSize;
     config.GlyphOffset.y = iconVerticalOffset;
-<<<<<<< HEAD
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(g_faRegular_compressed_data_base85,
-                                                   fontSize, &config, iconsRange);
-=======
     io.Fonts->AddFontFromMemoryTTF(faRegularBuf.get(), faRegular.size(), fontSize,
-                                   &config,
-                                   iconsRange);
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
+                                   &config, iconsRange);
 
     config.MergeMode = false;
     config.GlyphOffset.y = 0;
-    appState.ui.faSolid = io.Fonts->AddFontFromMemoryTTF(
-        faSolidBuf.get(), faSolid.size(), fontSize, &config, iconsRange);
+    appState.ui.faSolid = io.Fonts->AddFontFromMemoryTTF(faSolidBuf.get(), faSolid.size(),
+                                                         fontSize, &config, iconsRange);
 
     io.Fonts->Build();
 

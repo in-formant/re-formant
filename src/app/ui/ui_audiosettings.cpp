@@ -7,15 +7,15 @@
 
 void reformant::ui::audioSettings(AppState& appState) {
     if (ImGui::Begin("Audio settings", &appState.ui.showAudioSettings)) {
-        const auto& backends = appState.audio.backends();
+        const auto& backends = appState.audio->backends();
 
         std::string backendName =
-            appState.audio.backend(appState.ui.audioBackend)->name();
+            appState.audio->backend(appState.ui.audioBackend)->name();
 
-        auto captureDevice = appState.audio.currentCaptureDevice().lock();
+        auto captureDevice = appState.audio->currentCaptureDevice().lock();
         std::string captureDeviceName = captureDevice ? captureDevice->name() : "";
 
-        auto playbackDevice = appState.audio.currentPlaybackDevice().lock();
+        auto playbackDevice = appState.audio->currentPlaybackDevice().lock();
         std::string playbackDeviceName = playbackDevice ? playbackDevice->name() : "";
 
         if (ImGui::BeginCombo("Backend", backendName.c_str())) {
@@ -27,11 +27,13 @@ void reformant::ui::audioSettings(AppState& appState) {
                     auto defaultCaptureDevice = backend->defaultCaptureDevice().lock();
                     auto defaultPlaybackDevice = backend->defaultPlaybackDevice().lock();
 
-                    appState.audio.setCaptureDevice(backend->defaultCaptureDevice());
-                    appState.audio.setPlaybackDevice(backend->defaultPlaybackDevice());
-                    appState.audioOutputResampler.setRate(
-                        appState.audioTrack.sampleRate(),
-                        defaultCaptureDevice->sampleRate());
+                    appState.audio->setPlaybackDevice(defaultPlaybackDevice);
+                    appState.audio->setCaptureDevice(defaultCaptureDevice);
+                    if (defaultCaptureDevice) {
+                        appState.audioOutputResampler.setRate(
+                            appState.audioTrack.sampleRate(),
+                            defaultCaptureDevice->sampleRate());
+                    }
                     appState.ui.audioBackend = backend->type();
                 }
                 if (isSelected) ImGui::SetItemDefaultFocus();
@@ -40,7 +42,7 @@ void reformant::ui::audioSettings(AppState& appState) {
             ImGui::EndCombo();
         }
 
-        const auto& selectedBackend = appState.audio.backend(appState.ui.audioBackend);
+        const auto& selectedBackend = appState.audio->backend(appState.ui.audioBackend);
 
         if (ImGui::BeginCombo("Capture device", captureDeviceName.c_str())) {
             for (auto& devicePtr : selectedBackend->devices()) {
@@ -49,7 +51,7 @@ void reformant::ui::audioSettings(AppState& appState) {
                     bool isSelected = (captureDeviceName == device->name());
 
                     if (ImGui::Selectable(device->name().c_str(), isSelected)) {
-                        appState.audio.setCaptureDevice(device);
+                        appState.audio->setCaptureDevice(device);
                         appState.audioOutputResampler.setRate(
                             appState.audioTrack.sampleRate(), device->sampleRate());
                     }
@@ -67,7 +69,7 @@ void reformant::ui::audioSettings(AppState& appState) {
                     bool isSelected = (playbackDeviceName == device->name());
 
                     if (ImGui::Selectable(device->name().c_str(), isSelected)) {
-                        appState.audio.setPlaybackDevice(device);
+                        appState.audio->setPlaybackDevice(device);
                     }
                     if (isSelected) ImGui::SetItemDefaultFocus();
                 }
@@ -85,7 +87,6 @@ void reformant::ui::audioSettings(AppState& appState) {
 
         bool enableNoiseReduction = appState.settings.doNoiseReduction();
         if (ImGui::Checkbox("Enable noise reduction", &enableNoiseReduction)) {
-            std::lock_guard trackGuard(appState.audioTrack.mutex());
             appState.audioTrack.setDenoising(enableNoiseReduction);
             appState.settings.setNoiseReduction(enableNoiseReduction);
         }
@@ -109,14 +110,16 @@ void reformant::ui::audioSettings(AppState& appState) {
                 const auto name = std::to_string(sampleRate);
 
                 if (ImGui::Selectable(name.c_str(), isSelected)) {
-                    std::lock_guard trackGuard(appState.audioTrack.mutex());
-                    bool wasPlaying = appState.audio.isPlaying();
+                    bool wasPlaying = appState.audio->isPlaying();
+                    bool wasCapturing = appState.audio->isCapturing();
                     double time = appState.spectrogramController->time();
-                    if (wasPlaying) appState.audio.stopPlayback();
+                    if (wasPlaying) appState.audio->stopPlayback();
+                    if (wasCapturing) appState.audio->stopCapture();
                     appState.audioTrack.setSampleRate(sampleRate);
                     appState.settings.setTrackSampleRate(sampleRate);
                     appState.spectrogramController->forceClear();
-                    if (wasPlaying) appState.audio.startPlayback();
+                    if (wasPlaying) appState.audio->startPlayback();
+                    if (wasCapturing) appState.audio->startCapture();
                     appState.spectrogramController->setTime(time);
                 }
             }
@@ -150,29 +153,16 @@ void reformant::ui::audioSettings(AppState& appState) {
         uint64_t specMemStep = 4;
         uint64_t specMemStepFast = 32;
 
-<<<<<<< HEAD
-        if (ImGui::InputFloat("Max spectrogram memory usage", &maxSpecMemoryMb, 1.0f,
-                              16.0f, "%.0f MB")) {
-            appState.spectrogramController->setMaxMemoryMemo((uint64_t)maxSpecMemoryMb *
-                                                             1024_u64 * 1024_u64);
+        if (ImGui::InputScalar("Max spectrogram memory usage", ImGuiDataType_U64,
+                               &maxSpecMemoryMb, &specMemStep, &specMemStepFast,
+                               "%llu MB")) {
+            appState.spectrogramController->setMaxMemoryMemo(maxSpecMemoryMb * 1024 *
+                                                             1024);
+            appState.settings.setMaxSpectrogramMemory(maxSpecMemoryMb);
         }
 
         ImGui::Text("(approximately %.2f seconds before forced refresh)",
                     0.9 * appState.spectrogramController->approxMemoCapacityInSeconds());
-=======
-        if (ImGui::InputScalar("Max spectrogram memory usage", ImGuiDataType_U64,
-                               &maxSpecMemoryMb,
-                               &specMemStep, &specMemStepFast, "%llu MB")) {
-            appState.spectrogramController->setMaxMemoryMemo(
-                maxSpecMemoryMb * 1024 * 1024);
-            appState.settings.setMaxSpectrogramMemory(maxSpecMemoryMb);
-        }
-
-        ImGui::Text(
-            "(approximately %.2f seconds before forced refresh)",
-            0.9 *
-            appState.spectrogramController->approxMemoCapacityInSeconds());
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
     }
     ImGui::End();
 

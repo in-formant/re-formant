@@ -8,7 +8,7 @@ namespace reformant {
 class AppState;
 
 class VisualisationThread {
-public:
+   public:
     explicit VisualisationThread(AppState& appState, int approxProcessingDelayMs = 50);
 
     void start();
@@ -17,7 +17,7 @@ public:
 
     int processingTimeMillis();
 
-private:
+   private:
     void run();
 
     AppState& appState;
@@ -29,6 +29,6 @@ private:
     volatile bool m_isRunning;
     std::atomic_int m_processingTime;
 };
-} // namespace reformant
+}  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_VISUALISATIONTHREAD_H

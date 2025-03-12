@@ -2,8 +2,8 @@
 #define REFORMANT_PROCESSING_WAVEFORMCONTROLLER_H
 
 #include <mutex>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace reformant {
 struct AppState;
@@ -29,7 +29,7 @@ struct WaveformResults {
 };
 
 class WaveformController final {
-public:
+   public:
     explicit WaveformController(AppState& appState);
 
     ~WaveformController();
@@ -41,7 +41,7 @@ public:
     const WaveformResults& getWaveformForRange(double timeMin, double timeMax,
                                                double tpp);
 
-private:
+   private:
     void updateWaveformResults();
 
     void resetWaveformResults();
@@ -59,6 +59,6 @@ private:
     double m_waveTimeMax;
     double m_waveTimePerPixel;
 };
-} // namespace reformant
+}  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_WAVEFORMCONTROLLER_H

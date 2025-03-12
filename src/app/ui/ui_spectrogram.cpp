@@ -5,15 +5,15 @@
 #include "../processing/controller/formantcontroller.h"
 #include "../processing/controller/pitchcontroller.h"
 #include "../processing/controller/spectrogramcontroller.h"
-#include "ui_private.h"
 #include "processing/controller/waveformcontroller.h"
+#include "ui_private.h"
 
 namespace ImGui {
 static bool SliderDouble(const char* label, double* v, double v_min, double v_max,
                          const char* format = NULL, ImGuiSliderFlags flags = 0) {
     return SliderScalar(label, ImGuiDataType_Double, v, &v_min, &v_max, format, flags);
 }
-} // namespace ImGui
+}  // namespace ImGui
 
 namespace {
 bool definitelyGreaterThan(double a, double b, double epsilon) {
@@ -26,21 +26,19 @@ bool definitelyLessThan(double a, double b, double epsilon) {
 
 constexpr std::array implotFreqScales{ImPlotScale_Linear, ImPlotScale_Log10,
                                       ImPlotScale_Mel, ImPlotScale_Erb, ImPlotScale_Bark};
-} // namespace
+}  // namespace
 
 void reformant::ui::spectrogram(AppState& appState) {
-    std::lock_guard trackGuard(appState.audioTrack.mutex());
-
     SpectrogramController& spectrogramController = *appState.spectrogramController;
     PitchController& pitchController = *appState.pitchController;
     FormantController& formantController = *appState.formantController;
 
     if (ImGui::Begin("Spectrogram")) {
-        // if the cursor is being moved manually
         bool isTimeCursorBeingHeld = false;
         bool isPlayingOrRecording = false;
 
-        if (!appState.audio.isPlaying()) {
+        ImGui::BeginDisabled(appState.audio->isCapturing());
+        if (!appState.audio->isPlaying()) {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04b")) {
                 // Restart from the beginning if the cursor is at the end.
@@ -49,18 +47,18 @@ void reformant::ui::spectrogram(AppState& appState) {
                 const double duration = appState.audioTrack.duration();
 
                 // Test it with a 100ms tolerance.
-                if (duration - time < 100.0 / 1000.0) {
+                /*if (duration - time < 100.0 / 1000.0) {
                     spectrogramController.setTime(0);
-                }
+                }*/
 
-                appState.audio.startPlayback();
+                appState.audio->startPlayback();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start playback");
         } else {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04c")) {
-                appState.audio.stopPlayback();
+                appState.audio->stopPlayback();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop playback");
@@ -68,13 +66,15 @@ void reformant::ui::spectrogram(AppState& appState) {
             // Move the view window if playing.
             isPlayingOrRecording = true;
         }
+        ImGui::EndDisabled();
 
         ImGui::SameLine();
 
-        if (!appState.audio.isCapturing()) {
+        ImGui::BeginDisabled(appState.audio->isPlaying());
+        if (!appState.audio->isCapturing()) {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf111")) {
-                appState.audio.startCapture();
+                appState.audio->startCapture();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start recording");
@@ -89,7 +89,7 @@ void reformant::ui::spectrogram(AppState& appState) {
         } else {
             ImGui::PushFont(appState.ui.faSolid);
             if (ImGui::Button("\uf04d")) {
-                appState.audio.stopCapture();
+                appState.audio->stopCapture();
             }
             ImGui::PopFont();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop recording");
@@ -101,6 +101,7 @@ void reformant::ui::spectrogram(AppState& appState) {
 
             appState.ui.isRecording = true;
         }
+        ImGui::EndDisabled();
 
         ImGui::SameLine();
 
@@ -123,9 +124,9 @@ void reformant::ui::spectrogram(AppState& appState) {
         const float subplotsHeight = availHeight - ImGui::GetStyle().ItemSpacing.y;
 
         if (ImPlot::BeginSubplots(
-            "##subplots", 2, 1, {subplotsWidth, subplotsHeight},
-            ImPlotSubplotFlags_LinkCols | ImPlotSubplotFlags_NoMenus,
-            appState.ui.spectrumPlotRatios)) {
+                "##subplots", 2, 1, {subplotsWidth, subplotsHeight},
+                ImPlotSubplotFlags_LinkCols | ImPlotSubplotFlags_NoMenus,
+                appState.ui.spectrumPlotRatios)) {
             ImPlot::PushStyleVar(
                 ImPlotStyleVar_PlotPadding,
                 {2 * appState.ui.scalingFactor, 4 * appState.ui.scalingFactor});
@@ -167,27 +168,47 @@ void reformant::ui::spectrogram(AppState& appState) {
                                         ImPlotHeatmapFlags_None);
                 }
 
-                /*
-                auto pitches = pitchController.getPitchesForRange(rect.X.Min, rect.X.Max,
-                    timePerPixel);
+                const auto& pitches = pitchController.getPitchesForRange(
+                    rect.X.Min, rect.X.Max, timePerPixel);
 
+                const auto& formants = formantController.getFormantsForRange(
+                    rect.X.Min, rect.X.Max, timePerPixel);
+
+                // Try to draw outlines first so that they are hidden in case of overlap.
+
+                constexpr float circleSize = 3;
+                constexpr float outlineWeight = 3;
+                const ImVec4 transparent{0, 0, 0, 0};
+
+                // pitch outline
                 ImPlot::SetNextMarkerStyle(
-                    ImPlotMarker_Circle, 4.0f * appState.ui.scalingFactor,
-                    appState.ui.pitchColor, 1.0f * appState.ui.scalingFactor,
+                    ImPlotMarker_Circle, circleSize * appState.ui.scalingFactor,
+                    transparent, outlineWeight * appState.ui.scalingFactor,
                     appState.ui.pitchOutlineColor);
+                ImPlot::PlotScatter("##pitch_plot_outline", pitches.times.data(),
+                                    pitches.pitches.data(), pitches.times.size());
+
+                // formant outline
+                ImPlot::SetNextMarkerStyle(
+                    ImPlotMarker_Circle, circleSize * appState.ui.scalingFactor,
+                    transparent, outlineWeight * appState.ui.scalingFactor,
+                    appState.ui.formantOutlineColor);
+                ImPlot::PlotScatter("##formant_plot_outline", formants.times.data(),
+                                    formants.frequencies.data(), formants.times.size());
+
+                // pitch fill
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle,
+                                           circleSize * appState.ui.scalingFactor,
+                                           appState.ui.pitchColor, 0, transparent);
                 ImPlot::PlotScatter("##pitch_plot", pitches.times.data(),
                                     pitches.pitches.data(), pitches.times.size());
 
-                auto formants = formantController.getFormantsForRange(
-                    rect.X.Min, rect.X.Max, timePerPixel);
-
-                ImPlot::SetNextMarkerStyle(
-                    ImPlotMarker_Circle, 4.0f * appState.ui.scalingFactor,
-                    appState.ui.formantColor, 1.0f * appState.ui.scalingFactor,
-                    appState.ui.formantOutlineColor);
+                // formant fill
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle,
+                                           circleSize * appState.ui.scalingFactor,
+                                           appState.ui.formantColor, 0, transparent);
                 ImPlot::PlotScatter("##formant_plot", formants.times.data(),
                                     formants.frequencies.data(), formants.times.size());
-*/
 
                 double dragTime = spectrogramController.time();
                 if (ImPlot::DragLineX(838492, &dragTime, {1, 1, 1, 1}, 2,
@@ -204,9 +225,9 @@ void reformant::ui::spectrogram(AppState& appState) {
 
                 ImGui::SameLine(subplotsWidth + ImGui::GetStyle().ItemSpacing.x);
 
-                ImPlot::ColormapScale(
-                    "##Scale", appState.ui.spectrumMinDb, appState.ui.spectrumMaxDb,
-                    {colormapWidth, spectrogramHeight}, "%g dB");
+                ImPlot::ColormapScale("##Scale", appState.ui.spectrumMinDb,
+                                      appState.ui.spectrumMaxDb,
+                                      {colormapWidth, spectrogramHeight}, "%g dB");
                 if (ImGui::IsItemHovered() &&
                     ImGui::IsMouseClicked(ImGuiMouseButton_Right))
                     ImGui::OpenPopup("Range");
@@ -221,7 +242,7 @@ void reformant::ui::spectrogram(AppState& appState) {
                     }
                     ImGui::EndPopup();
                 }
-            } // spectrogram
+            }  // spectrogram
 
             ImGui::NewLine();
             ImGui::SameLine(FLT_EPSILON);
@@ -295,7 +316,7 @@ void reformant::ui::spectrogram(AppState& appState) {
                 }
 
                 ImPlot::EndPlot();
-            } // waveform_plot
+            }  // waveform_plot
 
             ImPlot::PopStyleColor();
 
@@ -305,7 +326,6 @@ void reformant::ui::spectrogram(AppState& appState) {
 
         appState.settings.setSpectrumPlotRatios(appState.ui.spectrumPlotRatios);
 
-<<<<<<< HEAD
         // Scrolling / time cursor movement logic.
 
         const double plotRangeSpan = appState.ui.plotTimeMax - appState.ui.plotTimeMin;
@@ -320,28 +340,6 @@ void reformant::ui::spectrogram(AppState& appState) {
             if (newTime < appState.ui.plotTimeMin || newTime > appState.ui.plotTimeMax) {
                 appState.ui.plotTimeMin += timeDiff;
                 appState.ui.plotTimeMax += timeDiff;
-=======
-        // Move the time range if it's out of the frame. (animate smoothly)
-        // Only do that if the time was changed.
-        if (timeCursorChangedForcefully || appState.ui.isInTimeScrollAnimation) {
-            double newTime = spectrogramController.time();
-            if (appState.ui.isRecording) {
-                newTime += 220e-3;
-            }
-            if ((newTime + 50e-3) < appState.ui.plotTimeMin ||
-                (newTime - 50e-3) > appState.ui.plotTimeMax) {
-                constexpr double animationTime = 200e-3;
-                const double timeDelta = (newTime > appState.ui.plotTimeMax)
-                                             ? newTime - appState.ui.plotTimeMax
-                                             : newTime - appState.ui.plotTimeMin;
-                const double deltaPct =
-                    std::min(1.0, ImGui::GetIO().DeltaTime / animationTime);
-                appState.ui.plotTimeMin += timeDelta * deltaPct;
-                appState.ui.plotTimeMax += timeDelta * deltaPct;
-                appState.ui.isInTimeScrollAnimation = true;
-            } else {
-                appState.ui.isInTimeScrollAnimation = false;
->>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
             }
 
             appState.ui.wasTimeCursorHeldLastFrame = true;
@@ -365,14 +363,16 @@ void reformant::ui::spectrogram(AppState& appState) {
                 appState.ui.plotTimeMax = timeEnd;
             }
 
-            // Arbitrarily make sure at least 99% of the frame is visible.
-            constexpr double pct = 0.99;
+            // Arbitrarily make sure at least 90% of the frame is visible.
+            constexpr double pct = 0.9;
             if (timeEnd < appState.ui.plotTimeMax - (1 - pct) * plotRangeSpan) {
                 appState.ui.plotTimeMax = timeEnd + (1 - pct) * plotRangeSpan;
                 appState.ui.plotTimeMin = timeEnd - pct * plotRangeSpan;
             }
             appState.ui.plotTimeMin += ImGui::GetIO().DeltaTime;
             appState.ui.plotTimeMax += ImGui::GetIO().DeltaTime;
+            // appState.ui.plotTimeMin += (1.0f / ImGui::GetIO().Framerate);
+            // appState.ui.plotTimeMax += (1.0f / ImGui::GetIO().Framerate);
 
             appState.ui.wasPlayingOrRecordingLastFrame = true;
         }
@@ -390,8 +390,8 @@ void reformant::ui::spectrogram(AppState& appState) {
     ImGui::End();
 
     // Stop playing if playing past the end of recording
-    if (appState.audio.isPlaying() &&
+    if (appState.audio->isPlaying() &&
         spectrogramController.timeSamples() >= appState.audioTrack.sampleCount()) {
-        appState.audio.stopPlayback();
+        appState.audio->stopPlayback();
     }
 }

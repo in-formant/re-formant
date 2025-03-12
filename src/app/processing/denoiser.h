@@ -13,10 +13,13 @@ class Denoiser final {
     Denoiser();
     virtual ~Denoiser();
 
+    static int frameSize();
+
     std::vector<float> process(const std::vector<float>& in);
 
    private:
     DenoiserPrivate* _p;
+    std::vector<float> _tmp;
 };
 
 class DenoiserError final : std::exception {

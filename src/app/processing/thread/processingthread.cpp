@@ -15,8 +15,7 @@ ProcessingThread::ProcessingThread(AppState& appState, const int approxProcessin
     : appState(appState),
       m_approxProcessingDelayMs(approxProcessingDelayMs),
       m_isRunning(false),
-      m_processingTime(0) {
-}
+      m_processingTime(0) {}
 
 void ProcessingThread::start() {
     m_isRunning = true;
@@ -48,9 +47,8 @@ void ProcessingThread::run() {
                 milliseconds(m_approxProcessingDelayMs - elapsed));
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
-            std::cout << "Processing (tracks) took longer than " <<
-                m_approxProcessingDelayMs
-                << " ms" << std::endl;
+            std::cout << "Processing (tracks) took longer than "
+                      << m_approxProcessingDelayMs << " ms" << std::endl;
         }
 
         lastTime = steady_clock::now();

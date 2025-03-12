@@ -1,15 +1,17 @@
 #ifndef REFORMANT_PROCESSING_AUDIOTRACK_H
 #define REFORMANT_PROCESSING_AUDIOTRACK_H
 
-#include <mutex>
+// #include <rcu_ptr.hpp>
+#include <shared_mutex>
 #include <vector>
 
 #include "denoiser.h"
 #include "resampler.h"
 
 namespace reformant {
+
 class AudioTrack {
-public:
+   public:
     AudioTrack();
 
     void append(const std::vector<float>& chunk, double sampleRate);
@@ -20,24 +22,26 @@ public:
 
     void setDenoising(bool denoising);
 
-    [[nodiscard]] double sampleRate() const;
+    double sampleRate() const;
 
-    [[nodiscard]] double duration() const;
+    double duration() const;
 
-    [[nodiscard]] int sampleCount() const;
+    int sampleCount() const;
 
-    [[nodiscard]] bool isDenoising() const;
+    bool isDenoising() const;
 
-    std::vector<float> data(int offset = 0, int length = -1);
+    std::vector<float> data(int offset = 0, int length = -1) const;
 
-    std::timed_mutex& mutex();
+    std::shared_mutex& mutex();
 
-private:
+   private:
     void resampleTrack(double fsIn, double fsOut);
 
     double m_sampleRate;
 
-    std::timed_mutex m_mutex;
+    // rcu_ptr<std::vector<float>> m_trackPtr;
+
+    mutable std::shared_mutex m_mutex;
     std::vector<float> m_track;
 
     Resampler m_resamplerTo48kHz;
@@ -46,6 +50,7 @@ private:
     bool m_doDenoising;
     Denoiser m_denoiser;
 };
-} // namespace reformant
+
+}  // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_AUDIOTRACK_H

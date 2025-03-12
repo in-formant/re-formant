@@ -44,7 +44,7 @@ void reformant::ui::setupGlfw(AppState& appState) {
 
     // Set GL context and setup GL loader.
     glfwMakeContextCurrent(appState.ui.window);
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize OpenGL context" << std::endl;

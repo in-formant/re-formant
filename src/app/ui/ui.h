@@ -14,7 +14,7 @@ void setupGlfw(AppState& appState);
 void setupImGui(AppState& appState);
 
 void setOutlineColor(const float rgb[3], float out[3]);
-} // namespace ui
-} // namespace reformant
+}  // namespace ui
+}  // namespace reformant
 
 #endif  // REFORMANT_UI_UI_H

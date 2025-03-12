@@ -10,11 +10,12 @@
 
 namespace reformant {
 
+class AppState;
 class AudioDevice;
 
 class AudioController {
    public:
-    AudioController();
+    AudioController(AppState &appState);
 
     bool initialize();
     bool terminate();
@@ -37,14 +38,19 @@ class AudioController {
     bool stopPlayback();
 
     // To be called from the the non-audio threads:
+    size_t availCaptureFrames() const;
+    size_t missingPlaybackFrames() const;
     unsigned long pullCaptureFrames(float *frm, unsigned long frmCount);
     unsigned long pushPlaybackFrames(const float *frm, unsigned long frmCount);
+    void clearPlaybackFrames();
 
     // To be called from the audio thread:
-    void pushCaptureFrames(const float *frm, unsigned long frmCount);
-    void pullPlaybackFrames(float *frm, unsigned long frmCount);
+    bool pushCaptureFrames(const float *frm, unsigned long frmCount);
+    bool pullPlaybackFrames(float *frm, unsigned long frmCount);
 
    private:
+    AppState &appState;
+
     std::vector<std::unique_ptr<AudioBackend>> m_backends;
 
     std::weak_ptr<AudioDevice> m_currentCaptureDevice;
@@ -58,6 +64,9 @@ class AudioController {
 
     moodycamel::ReaderWriterQueue<float> m_playbackBuffer;
     std::atomic<bool> m_playbackBufferUnderrun;
+
+    int m_playbackInitialOffset;
+    int m_playbackCurrentOffset;
 };
 
 }  // namespace reformant

@@ -26,7 +26,7 @@ class FormantController {
 
     void updateIfNeeded();
 
-    FormantResults getFormantsForRange(double timeMin, double timeMax, double tpp);
+    const FormantResults& getFormantsForRange(double timeMin, double timeMax, double tpp);
 
    private:
     AppState& appState;
@@ -42,6 +42,8 @@ class FormantController {
     std::vector<double> m_frequencies;
 
     FormantTracking m_tracking;
+
+    FormantResults m_formantResults;
 };
 
 }  // namespace reformant

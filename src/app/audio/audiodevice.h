@@ -32,8 +32,8 @@ class AudioDevice {
     AudioDevice(AudioController& controller) : m_controller(controller) {}
     virtual ~AudioDevice() {}
 
-    virtual void pushCaptureFrames(const float* frm, unsigned long frmCount) = 0;
-    virtual void pullPlaybackFrames(float* frm, unsigned long frmCount) = 0;
+    virtual bool pushCaptureFrames(const float* frm, unsigned long frmCount) = 0;
+    virtual bool pullPlaybackFrames(float* frm, unsigned long frmCount) = 0;
 
     AudioController& m_controller;
 };
