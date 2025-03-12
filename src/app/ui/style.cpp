@@ -2,6 +2,7 @@
 #include <implot.h>
 
 #include "ui.h"
+#include "ok_color.h"
 
 void reformant::ui::setStyle(bool bStyleDark, float alpha,
                              float scalingFactor) {
@@ -69,7 +70,7 @@ void reformant::ui::setStyle(bool bStyleDark, float alpha,
         ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 
     if (bStyleDark) {
-        for (int i = 0; i <= ImGuiCol_COUNT; i++) {
+        for (int i = 0; i < ImGuiCol_COUNT; i++) {
             ImVec4& col = style.Colors[i];
             float H, S, V;
             ImGui::ColorConvertRGBtoHSV(col.x, col.y, col.z, H, S, V);
@@ -83,7 +84,7 @@ void reformant::ui::setStyle(bool bStyleDark, float alpha,
             }
         }
     } else {
-        for (int i = 0; i <= ImGuiCol_COUNT; i++) {
+        for (int i = 0; i < ImGuiCol_COUNT; i++) {
             ImVec4& col = style.Colors[i];
             if (col.w < 1.00f) {
                 col.x *= alpha;
@@ -103,4 +104,24 @@ void reformant::ui::setStyle(bool bStyleDark, float alpha,
     ImPlot::GetStyle().Colors[ImPlotCol_FrameBg] = ImVec4(0, 0, 0, 0);
     ImPlot::GetStyle().Colormap = ImPlotColormap_Plasma;
     ImPlot::GetStyle().UseGpuAcceleration = true;
+}
+
+void reformant::ui::setOutlineColor(const float rgb[4], float out[4]) {
+    using namespace ok_color;
+
+    constexpr float weight = 0.9f;
+
+    Lab colorLab = linear_srgb_to_oklab({rgb[0], rgb[1], rgb[2]});
+
+    if (colorLab.L > 0.5f) {
+        colorLab.L = (weight * colorLab.L + (1 - weight) * 1.0f) / 2;
+    } else {
+        colorLab.L = (weight * colorLab.L + (1 - weight) * 0.0f) / 2;
+    }
+
+    RGB colorRgb = oklab_to_linear_srgb(colorLab);
+    out[0] = colorRgb.r;
+    out[1] = colorRgb.g;
+    out[2] = colorRgb.b;
+    out[3] = 0.8f;
 }

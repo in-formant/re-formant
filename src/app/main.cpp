@@ -8,28 +8,47 @@
 #include <portaudio.h>
 
 #include <cstdlib>
-#include <filesystem>
 #include <iostream>
 
+<<<<<<< HEAD
 // #include "audio/setup_audio.h"
 #include "processing/controller/formantcontroller.h"
+=======
+#include "audio/setup_audio.h"
+>>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
 #include "processing/controller/pitchcontroller.h"
+#include "processing/controller/formantcontroller.h"
 #include "processing/controller/spectrogramcontroller.h"
+#include "processing/controller/waveformcontroller.h"
 #include "processing/thread/consumerthread.h"
 #include "processing/thread/processingthread.h"
+#include "processing/thread/visualisationthread.h"
 #include "state.h"
 #include "ui/ui.h"
+#include "memusage.h"
 
 namespace {
 reformant::Settings instantiateSettings();
-}  // namespace
+} // namespace
 
 int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+
     reformant::AppState appState;
     appState.settings = instantiateSettings();
 
     reformant::ui::setupGlfw(appState);
 
+<<<<<<< HEAD
+=======
+    if (PaError paErr = Pa_Initialize(); paErr != paNoError) {
+        std::cerr << "Failed to initialize PortAudio: " << Pa_GetErrorText(paErr)
+            << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+>>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
     reformant::ui::setupImGui(appState);
 
     // ##SETUP AUDIO
@@ -40,18 +59,24 @@ int main(int argc, char* argv[]) {
     appState.ui.audioBackend = appState.audio.backends().front()->type();
     // ###SETUP AUDIO
 
-    reformant::SpectrogramController spectrogramController(appState);
-    spectrogramController.setFftLength(appState.settings.fftLength());
-    appState.spectrogramController = &spectrogramController;
-
     reformant::PitchController pitchController(appState);
     appState.pitchController = &pitchController;
 
     reformant::FormantController formantController(appState);
     appState.formantController = &formantController;
 
+    reformant::SpectrogramController spectrogramController(appState);
+    spectrogramController.setFftLength(appState.settings.fftLength());
+    appState.spectrogramController = &spectrogramController;
+    appState.spectrogramController->setMaxMemoryMemo(
+        appState.settings.maxSpectrogramMemory() * 1024_u64 * 1024_u64);
+
+    reformant::WaveformController waveformController(appState);
+    appState.waveformController = &waveformController;
+
     appState.ui.showAudioSettings = appState.settings.showAudioSettings();
     appState.ui.showDisplaySettings = appState.settings.showDisplaySettings();
+    appState.ui.showProfiler = appState.settings.showProfiler();
 
     appState.settings.spectrumPlotRatios(appState.ui.spectrumPlotRatios);
     appState.ui.plotTimeMin = 0;
@@ -90,6 +115,11 @@ int main(int argc, char* argv[]) {
     reformant::ProcessingThread processingThread(appState);
     processingThread.start();
     appState.processingThread = &processingThread;
+
+    // Start the audio visualisation thread.
+    reformant::VisualisationThread visualisationThread(appState);
+    visualisationThread.start();
+    appState.visualisationThread = &visualisationThread;
 
     // Clear color
     ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -144,6 +174,7 @@ int main(int argc, char* argv[]) {
     // Cleanup
     consumerThread.terminate();
     processingThread.terminate();
+    visualisationThread.terminate();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -162,7 +193,7 @@ int main(int argc, char* argv[]) {
 #define SETTINGS_INI 1
 
 #if defined(_WIN32) || defined(_WIN64)  // Windows
-    #define SETTINGS SETTINGS_INI
+#define SETTINGS SETTINGS_INI
 #elif defined(__CYGWIN__) && !defined(_WIN32)  // Windows (Cygwin)
     #define SETTINGS SETTINGS_INI
 #elif defined(__ANDROID__)  // Android (implies Linux)
@@ -171,13 +202,13 @@ int main(int argc, char* argv[]) {
     #define SETTINGS SETTINGS_INI
 #elif defined(__APPLE__) && defined(__MACH__)  // Apple OSX and iOS (Darwin)
     #include <TargetConditionals.h>
-    #if TARGET_IPHONE_SIMULATOR == 1  // Apple iOS
+#if TARGET_IPHONE_SIMULATOR == 1  // Apple iOS
         #define SETTINGS SETTINGS_NOOP
-    #elif TARGET_OS_IPHONE == 1  // Apple iOS
+#elif TARGET_OS_IPHONE == 1  // Apple iOS
         #define SETTINGS SETTINGS_NOOP
-    #elif TARGET_OS_MAC == 1  // Apple OSX
+#elif TARGET_OS_MAC == 1  // Apple OSX
         #define SETTINGS SETTINGS_INI
-    #endif
+#endif
 #else
     #define SETTINGS SETTINGS_NOOP
 #endif
@@ -186,15 +217,15 @@ int main(int argc, char* argv[]) {
     #warning "Target system not supported yet. Using no-op settings backend."
     #define SystemSettingsBackend() reformant::SettingsBackend()
 #elif SETTINGS == SETTINGS_INI
-    #include "settings/settings_ini.h"
-    #define SystemSettingsBackend() reformant::IniSettingsBackend()
+#include "settings/settings_ini.h"
+#define SystemSettingsBackend() reformant::IniSettingsBackend()
 #endif
 
 namespace {
 reformant::Settings instantiateSettings() {
     return reformant::Settings(SystemSettingsBackend());
 }
-}  // namespace
+} // namespace
 
 #if defined(_WIN32) && defined(WINMAIN)
 

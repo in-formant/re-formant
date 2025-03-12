@@ -1,15 +1,15 @@
-#ifndef REFORMANT_PROCESSING_PROCESSINGTHREAD_H
-#define REFORMANT_PROCESSING_PROCESSINGTHREAD_H
+#ifndef REFORMANT_PROCESSING_VISUALISATIONTHREAD_H
+#define REFORMANT_PROCESSING_VISUALISATIONTHREAD_H
 
 #include <atomic>
 #include <thread>
 
 namespace reformant {
-struct AppState;
+class AppState;
 
-class ProcessingThread {
+class VisualisationThread {
 public:
-    explicit ProcessingThread(AppState& appState, int approxProcessingDelayMs = 50);
+    explicit VisualisationThread(AppState& appState, int approxProcessingDelayMs = 50);
 
     void start();
 
@@ -31,4 +31,4 @@ private:
 };
 } // namespace reformant
 
-#endif  // REFORMANT_PROCESSING_PROCESSINGTHREAD_H
+#endif  // REFORMANT_PROCESSING_VISUALISATIONTHREAD_H

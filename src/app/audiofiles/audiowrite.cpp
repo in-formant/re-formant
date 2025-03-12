@@ -1,6 +1,7 @@
 #include <sndfile.h>
 
 #include <iostream>
+#include <cstring>
 
 #include "audiofiles.h"
 

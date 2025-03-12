@@ -12,11 +12,12 @@ using namespace reformant;
 ConsumerThread::ConsumerThread(AppState& appState, const int approxRetrieveDelayMs)
     : appState(appState),
       m_approxRetrieveDelayMs(approxRetrieveDelayMs),
-      m_isRunning(false) {}
+      m_isRunning(false) {
+}
 
 void ConsumerThread::start() {
     m_isRunning = true;
-    m_thread = std::thread(std::bind(&ConsumerThread::run, this));
+    m_thread = std::thread([this] { run(); });
 }
 
 void ConsumerThread::terminate() {
@@ -24,7 +25,7 @@ void ConsumerThread::terminate() {
     m_thread.join();
 }
 
-void ConsumerThread::run() {
+void ConsumerThread::run() const {
     auto lastTime = steady_clock::now();
 
     /*appState.audioInput.setBufferCallback(
@@ -56,8 +57,13 @@ void ConsumerThread::run() {
             std::this_thread::sleep_for(milliseconds(m_approxRetrieveDelayMs - elapsed));
         } else if (elapsed) {
             // Log to console if it took more time than the expected delay.
+<<<<<<< HEAD
             std::cout << "Retrieving took longer than " << m_approxRetrieveDelayMs
                       << " ms" << std::endl;
+=======
+            std::cout << "Retrieving took longer than "
+                << m_approxRetrieveDelayMs << " ms" << std::endl;
+>>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
         }
 
         lastTime = steady_clock::now();

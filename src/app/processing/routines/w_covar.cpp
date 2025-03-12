@@ -3,7 +3,6 @@
 bool w_covar(const std::vector<double>& xx, int xoff, int* m, int n, int istrt,
              std::vector<double>& y, double* alpha, double* r0, double preEmphasis,
              WindowType windowType)
-
 {
     static int nold = 0;
     static int mold = 0;

@@ -4,7 +4,9 @@
 
 #include "../audiofiles/audiofiles.h"
 #include "../processing/controller/pitchcontroller.h"
+#include "../processing/controller/formantcontroller.h"
 #include "../processing/controller/spectrogramcontroller.h"
+#include "../processing/controller/waveformcontroller.h"
 #include "ui_private.h"
 
 void reformant::ui::dockspace(AppState& appState) {
@@ -44,6 +46,8 @@ void reformant::ui::dockspace(AppState& appState) {
                 appState.spectrogramController->setTime(0);
                 appState.spectrogramController->forceClear();
                 appState.pitchController->forceClear();
+                appState.formantController->forceClear();
+                appState.waveformController->forceClear();
             }
 
             if (ImGui::MenuItem("Open", "CTRL+O", nullptr)) {
@@ -87,14 +91,13 @@ void reformant::ui::dockspace(AppState& appState) {
         }
         ifd::FileDialog::Instance().Close();
 
-        std::cout << "audio file read filter: " << audiofiles::getReadFilter()
-                  << std::endl;
+        //std::cout << "audio file read filter: " << audiofiles::getReadFilter() << std::endl;
     }
 
     if (ifd::FileDialog::Instance().IsDone("AudioFileSaveDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
             const auto filePath = ifd::FileDialog::Instance().GetResult().string();
-            const size_t formatIndex = ifd::FileDialog::Instance().GetSelectedFilter();
+            const size_t formatIndex = ifd::FileDialog::Instance().GetFilterSelection();
 
             appState.audioTrack.mutex().lock();
             const auto data = appState.audioTrack.data();
@@ -107,7 +110,7 @@ void reformant::ui::dockspace(AppState& appState) {
             }
         }
         std::cout << "audio file write filter: "
-                  << audiofiles::getWriteFilter(trackSampleRate) << std::endl;
+            << audiofiles::getWriteFilter(trackSampleRate) << std::endl;
         ifd::FileDialog::Instance().Close();
     }
 }

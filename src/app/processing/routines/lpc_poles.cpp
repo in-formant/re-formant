@@ -17,13 +17,13 @@ PoleArray lpc_poles(const std::vector<double>& data, double sampleRate,
     windowDuration = integerize(windowDuration, sampleRate);
     frameInterval = integerize(frameInterval, sampleRate);
 
-    const int size = (int)(.5 + (windowDuration * sampleRate));
-    const int step = (int)(.5 + (frameInterval * sampleRate));
+    const int size = static_cast<int>(std::round(windowDuration * sampleRate));
+    const int step = static_cast<int>(std::round(frameInterval * sampleRate));
 
     const int length = data.size();
 
     const int numFrames =
-        (int)(((double)length / sampleRate - windowDuration) / frameInterval);
+        static_cast<int>((static_cast<double>(length) / sampleRate - windowDuration) / frameInterval);
 
     if (numFrames >= 1) {
         const double lpcStabl = 70.0;
@@ -80,7 +80,7 @@ PoleArray lpc_poles(const std::vector<double>& data, double sampleRate,
                 init = true; /* restart root search in a neutral zone */
             }
         } /* end LPC pole computation for all frames */
-        return {pole, (int)pole.size(), 1. / frameInterval};
+        return {pole, static_cast<int>(pole.size()), 1. / frameInterval};
     } else {
         std::cerr << "Bad buffer in lpc_poles()" << std::endl;
         return {};

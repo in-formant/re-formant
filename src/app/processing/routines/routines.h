@@ -5,12 +5,8 @@
 #include <vector>
 
 inline double integerize(const double time, const double freq) {
-    const int i = (int)(.5 + (freq * time));
-    return ((double)i) / freq;
-}
-
-inline int eround(const double flnum) {
-    return (flnum >= 0.0) ? (int)(flnum + .5) : (int)(flnum - .5);
+    const int i = static_cast<int>(std::round(freq * time));
+    return static_cast<double>(i) / freq;
 }
 
 enum WindowType {
@@ -28,12 +24,12 @@ enum LpcType {
 
 struct Pole {
     int offset;
-    double rms;               /* rms for current LPC analysis frame */
-    double rms2;              /* rms for current F0 analysis frame */
-    double f0;                /* fundamental frequency estimate for this frame */
-    double pv;                /* probability that frame is voiced */
-    double change;            /* spec. distance between current and prev. frames */
-    int npoles;               /* # of complex poles from roots of LPC polynomial */
+    double rms; /* rms for current LPC analysis frame */
+    double rms2; /* rms for current F0 analysis frame */
+    double f0; /* fundamental frequency estimate for this frame */
+    double pv; /* probability that frame is voiced */
+    double change; /* spec. distance between current and prev. frames */
+    int npoles; /* # of complex poles from roots of LPC polynomial */
     std::vector<double> freq; /* array of complex pole frequencies (Hz) */
     std::vector<double> band; /* array of complex pole bandwidths (Hz) */
 };
@@ -100,7 +96,7 @@ void dcwmtrx(const std::vector<double>& s, int ni, int nl, int np,
 
 int dlpcwtd(const std::vector<double>& s, int ls, std::vector<double>& p, int np,
             std::vector<double>& c, std::vector<double>& phi, std::vector<double>& shi,
-            double* xl, const std::vector<double>& w);
+            double xl, const std::vector<double>& w);
 
 bool qquad(double a, double b, double c, double* r1r, double* r1i, double* r2r,
            double* r2i);

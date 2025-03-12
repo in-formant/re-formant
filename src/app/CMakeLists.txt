@@ -43,8 +43,8 @@ add_executable(ReFormant
     processing/thread/consumerthread.h
     processing/thread/processingthread.cpp
     processing/thread/processingthread.h
-    processing/controller/fftmemo/fftmemo.cpp
-    processing/controller/fftmemo/fftmemo.h
+    processing/thread/visualisationthread.cpp
+    processing/thread/visualisationthread.h
     processing/controller/formantcontroller.cpp
     processing/controller/formantcontroller.h
     processing/controller/formants.cpp
@@ -53,11 +53,12 @@ add_executable(ReFormant
     processing/controller/pitchcontroller.h
     processing/controller/spectrogramcontroller.cpp
     processing/controller/spectrogramcontroller.h
+    processing/controller/waveformcontroller.cpp
+    processing/controller/waveformcontroller.h
     readerwriterqueue/atomicops.h
     readerwriterqueue/readerwriterqueue.h
     settings/settings_ini.cpp
     settings/settings_ini.h
-    settings/settings_none.h
     settings/settings.cpp
     settings/settings.h
     ui/render.cpp
@@ -76,6 +77,20 @@ add_executable(ReFormant
     memusage.h
     state.h
     mini/ini.h
+    processing/routines/eckf/ECKF.cpp
+    processing/routines/eckf/ECKF.h
+    processing/routines/eckf/harmonic_change_detector.cpp
+    processing/routines/eckf/is_silent.cpp
+)
+
+cmrc_add_resource_library(
+    res-fonts
+    ALIAS res::fonts
+    NAMESPACE fonts
+    WHENCE ui/fonts
+    "ui/fonts/faRegular.otf"
+    "ui/fonts/faSolid.otf"
+    "ui/fonts/interMedium.ttf"
 )
 
 target_include_directories(ReFormant PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -84,56 +99,54 @@ target_link_libraries(ReFormant PRIVATE
     glad ImGui::Core ImGui::FreeType ImPlot ImFileDialog
     speex_resampler sndfile rnnoise
     ${FFTW_FLOAT_LIB}  ${FREETYPE_LIBRARIES} ${PORTAUDIO_LIBRARY}
+    res::fonts
 )
 
 target_include_directories(ReFormant PRIVATE
     ${GLM_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${FFTW_INCLUDE_DIRS} ${PORTAUDIO_INCLUDE_DIR}
 )
 
-if(CMAKE_BUILD_TYPE STREQUAL Release)
-    set_property(TARGET ReFormant
-                 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
+#if(CMAKE_BUILD_TYPE STREQUAL Release)
+#    set_property(TARGET ReFormant
+#                 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+#endif()
 
-if(WIN32)
+if (WIN32)
     target_sources(ReFormant PRIVATE reformant.manifest)
     target_compile_definitions(ReFormant PRIVATE "IMGUI_ENABLE_WIN32_DEFAULT_IME_FUNCTIONS")
 
     # Only disable console in Release build
-    if(CMAKE_BUILD_TYPE STREQUAL Release)
-        if(MSVC)
+    if (CMAKE_BUILD_TYPE STREQUAL Release)
+        if (MSVC)
             target_link_options(ReFormant PRIVATE /subsystem:windows)
-        else()
+        else ()
             target_link_options(ReFormant PRIVATE -mwindows)
-        endif()
+        endif ()
         target_compile_definitions(ReFormant PRIVATE "WINMAIN")
-    endif()
+    endif ()
 
     target_link_libraries(ReFormant PRIVATE psapi)
-endif()
+endif ()
 
-if(MSVC)
-    target_compile_options(ReFormant PRIVATE /utf-8)
-endif()
-
-if(EMSCRIPTEN)
+if (EMSCRIPTEN)
     set(EM_GLFW_FLAG "SHELL:-s USE_GLFW=3")
     target_compile_options(ReFormant PRIVATE ${EM_GLFW_FLAG})
     target_link_options(ReFormant PRIVATE ${EM_GLFW_FLAG})
-else()
+else ()
     target_link_libraries(ReFormant PRIVATE glfw)
-endif()
+endif ()
 target_link_libraries(ReFormant PRIVATE ImGui::ImplGlfw)
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(ReFormant PRIVATE OpenGL::GL ImGui::ImplOpenGL3)
 
-if(USE_ASAN)
+if (USE_ASAN)
     target_compile_options(ReFormant PRIVATE -fsanitize=address)
     target_link_options(ReFormant PRIVATE -fsanitize=address)
-endif()
+    target_compile_definitions(ReFormant PRIVATE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
+endif ()
 
-if(USE_USAN)
+if (USE_USAN)
     target_compile_options(ReFormant PRIVATE -fsanitize=undefined)
     target_link_options(ReFormant PRIVATE -fsanitize=undefined)
-endif()
+endif ()

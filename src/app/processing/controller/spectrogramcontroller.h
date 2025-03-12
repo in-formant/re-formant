@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace reformant {
-
 struct AppState;
 
 struct SpectrogramResults {
@@ -17,29 +16,35 @@ struct SpectrogramResults {
     double freqMax;
     int numSlices;
     int numFreqs;
-    std::vector<double> data;
+    std::vector<float> data;
+    std::vector<float> dataColMajor;
 };
 
-class SpectrogramController {
-   public:
+class SpectrogramController final {
+public:
     SpectrogramController(AppState& appState);
-    virtual ~SpectrogramController();
+
+    ~SpectrogramController();
 
     double time() const;
+
     void setTime(double time);
 
-    int timeSamples() const;
+    [[nodiscard]] int timeSamples() const;
+
     void setTimeSamples(int timeSamples);
 
-    int fftLength() const;
+    [[nodiscard]] int fftLength() const;
+
     void setFftLength(int nfft);
 
-    uint64_t maxMemoryMemo() const;
+    [[nodiscard]] uint64_t maxMemoryMemo() const;
+
     void setMaxMemoryMemo(uint64_t mem);
 
     void forceClear();
 
-    double approxMemoCapacityInSeconds() const;
+    [[nodiscard]] double approxMemoCapacityInSeconds() const;
 
     uint64_t bytesUsedByMemo();
 
@@ -47,16 +52,21 @@ class SpectrogramController {
 
     const SpectrogramResults& getSpectrogramForRange(double timeMin, double timeMax,
                                                      double tpp);
+<<<<<<< HEAD
+=======
 
-   private:
+private:
+    void updateSpectrogramResults();
+>>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
+
     AppState& appState;
 
-    volatile double m_time;  // volatile because modified from another thread
+    volatile double m_time; // volatile because modified from another thread
     volatile int m_timeSamples;
 
     std::mutex m_fftMutex;
 
-    int m_fftLength;  // non volatile bc only modified from UI thread
+    int m_fftLength; // nonvolatile bc only modified from UI thread
     fftwf_plan m_fftPlan;
     float* m_fftInput;
     float* m_fftOutput;
@@ -68,12 +78,20 @@ class SpectrogramController {
     int m_fftMemoStartBlock;
     int m_fftMemoRowCount;
 
-    std::vector<double> m_fftMemo;
+    std::vector<float> m_fftMemo;
 
+<<<<<<< HEAD
     double m_lastSpecRequestTimeMin;
     SpectrogramResults m_specResults;
-};
+=======
+    SpectrogramResults m_specResults;
 
-}  // namespace reformant
+    bool m_needSpecUpdate;
+    double m_specTimeMin;
+    double m_specTimeMax;
+    double m_specTimePerPixel;
+>>>>>>> ad5d6c670eab97383613c8523ec32898a1ef1cc9
+};
+} // namespace reformant
 
 #endif  // REFORMANT_PROCESSING_SPECTROGRAMCONTROLLER_H

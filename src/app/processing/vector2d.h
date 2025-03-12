@@ -16,9 +16,9 @@ class vector2d {
 
     vector2d() : m_rows(0), m_cols(0) {}
 
-    int rows() const { return m_rows; }
+    [[nodiscard]] int rows() const { return m_rows; }
 
-    int cols() const { return m_cols; }
+    [[nodiscard]] int cols() const { return m_cols; }
 
     void resize(const int rows, const int cols) {
         m_rows = rows;
@@ -64,15 +64,15 @@ class vector2d {
     }
 
    private:
-    inline void boundCheck(const int i, const int j) const {
+    void boundCheck(const int i, const int j) const {
         if (i < 0 || i >= m_rows) throw std::domain_error("Row index out of bounds");
         if (j < 0 || j >= m_cols) throw std::domain_error("Column index out of bounds");
     }
 
-    inline int index(const int i, const int j) const { return i * m_cols + j; }
+    [[nodiscard]] int index(const int i, const int j) const { return i * m_cols + j; }
 
-    inline T& at(const int i, const int j) { return m_array[index(i, j)]; }
-    inline const T& at(const int i, const int j) const { return m_array[index(i, j)]; }
+    T& at(const int i, const int j) { return m_array[index(i, j)]; }
+    const T& at(const int i, const int j) const { return m_array[index(i, j)]; }
 
     int m_rows;
     int m_cols;
@@ -91,17 +91,17 @@ class vector2d {
         }
 
        private:
-        const_row_view(const vector2d<T>& ref, const int row) : m_ref(ref), m_row(row) {}
+        const_row_view(const vector2d& ref, const int row) : m_ref(ref), m_row(row) {}
 
-        inline void boundCheck(const int j) {
-            if (j < 0 || j >= m_cols)
+        void boundCheck(const int j) const {
+            if (j < 0 || j >= m_ref.m_cols)
                 throw std::domain_error("Column index out of bounds");
         }
 
-        const vector2d<T>& m_ref;
+        const vector2d& m_ref;
         const int m_row;
 
-        friend class vector2d<T>;
+        friend class vector2d;
     };
 
     class row_view {
@@ -117,12 +117,12 @@ class vector2d {
         }
 
        private:
-        row_view(vector2d<T>& ref, const int row) : m_ref(ref), m_row(row) {}
+        row_view(vector2d& ref, const int row) : m_ref(ref), m_row(row) {}
 
-        vector2d<T>& m_ref;
+        vector2d& m_ref;
         const int m_row;
 
-        friend class vector2d<T>;
+        friend class vector2d;
     };
 
     friend class const_row_view;
