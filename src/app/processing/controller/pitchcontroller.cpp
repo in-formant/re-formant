@@ -47,7 +47,7 @@ void PitchController::updateIfNeeded() {
     }
 
     // -- RAPT
-    // m_rapt.process(m_lastTimeRapt, m_times, m_pitches);
+    //m_rapt.process(m_lastTimeRapt, m_times, m_pitches, m_saliences);
     m_crepe.process(m_lastTimeCrepe, m_times, m_pitches, m_saliences);
 }
 
@@ -69,7 +69,7 @@ PitchResults PitchController::getPitchesForRange(double timeMin, double timeMax,
             const double pitch = m_pitches[i];
             const double salience = m_saliences[i];
 
-            if (!std::isnan(pitch) && !std::isnan(salience)) {
+            if (!std::isnan(pitch) && !std::isnan(salience) && salience > 0.15) {
                 result.times.push_back(time);
                 result.pitches.push_back(pitch);
                 result.saliences.push_back(salience);

@@ -1,24 +1,27 @@
 {
-    "cmake.preferredGenerators": [
-        "Ninja"
-    ],
-    "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}_${variant:usan}_${variant:asan}",
+    "cmake.generator": "Ninja",
+    "cmake.cmakePath": "${command:cmake.buildkit.cmake.exe}",
+    "cmake.preferredGenerators": ["Unix Makefiles"],
+    "cmake.configureSettings": {
+        "CMAKE_MAKE_PROGRAM": "${command:cmake.buildkit.generator.exe}",
+        "CMAKE_VERBOSE_MAKEFILE": false,
+        "CMAKE_PREFIX_PATH": "D:\\libtensorflow"
+    },
     "cmake.configureEnvironment": {
         "CMAKE_BUILD_PARALLEL_LEVEL": "32",
     },
-    "cmake.configureSettings": {
-        /*"CMAKE_TOOLCHAIN_FILE": "K:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
-        "VCPKG_LIBRARY_LINKAGE": "static",*/
-    },
+    "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}_${variant:usan}_${variant:asan}",
+    
     "C_Cpp.intelliSenseEngine": "disabled",
+    
     "clangd.checkUpdates": true,
     "clangd.onConfigChanged": "restart",
     "clangd.arguments": ["-log=verbose", 
                          "-pretty", 
                          "--background-index", 
-                        "--compile-commands-dir=build/RelWithDebInfo_none_none"
+                        "--compile-commands-dir=build/Debug_none_none"
                     ],
     "editor.codeActionsOnSave": {
         "source.fixAll": "always"
-    }
+    },
 }

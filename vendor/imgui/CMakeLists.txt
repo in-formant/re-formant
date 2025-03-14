@@ -76,7 +76,8 @@ if (EMSCRIPTEN)
     target_compile_options(ImGui_ImplGlfw PRIVATE ${EM_GLFW_FLAG})
     target_link_options(ImGui_ImplGlfw PRIVATE ${EM_GLFW_FLAG})
 else ()
-    target_link_libraries(ImGui_ImplGlfw PRIVATE glfw)
+    target_include_directories(ImGui_ImplGlfw PRIVATE ${GLFW3_INCLUDE_DIR})
+    target_link_libraries(ImGui_ImplGlfw PRIVATE ${GLFW3_LIBRARY})
 endif ()
 
 imgui_library(ImplOpenGL2

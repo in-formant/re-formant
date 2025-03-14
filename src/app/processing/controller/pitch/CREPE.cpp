@@ -20,7 +20,7 @@ CREPE::CREPE(AppState& appState)
       m_lastSampleRate(-1),
       m_16kBlock(crepe_bsz),
       m_16kSamplesWaiting(0),
-      m_viterbi(Crepe_Pi(crepe_bins), Crepe_A(crepe_bins), Crepe_B(crepe_bins), 30) {}
+      m_viterbi(Crepe_Pi(crepe_bins), Crepe_A(crepe_bins), Crepe_B(crepe_bins), 10) {}
 
 void CREPE::reset() {
     m_16kResampler.reset();
@@ -35,7 +35,7 @@ void CREPE::reset() {
 void CREPE::process(int& lastTime, std::vector<double>& times,
                     std::vector<double>& pitches, std::vector<double>& saliences) {
     if (!m_crepe.isModelInitialized()) {
-        m_crepe.setModel(::CREPE::Model_Full);
+        m_crepe.setModel(::CREPE::Model_Tiny);
     }
 
     // Track sample rate.

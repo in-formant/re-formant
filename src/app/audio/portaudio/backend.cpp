@@ -19,7 +19,11 @@ bool AudioBackendPortAudio::initialize() {
     m_successfulPaInit = true;
 
     // Enumerate devices.
+    #if defined(__linux)
     PaHostApiIndex hostApi = Pa_HostApiTypeIdToHostApiIndex(paJACK);
+    #elif defined(_WIN32)
+    PaHostApiIndex hostApi = Pa_HostApiTypeIdToHostApiIndex(paWASAPI);
+    #endif
     const PaHostApiInfo* hostInfo = Pa_GetHostApiInfo(hostApi);
     int hostDefInDev = hostInfo->defaultInputDevice;
     int hostDefOutDev = hostInfo->defaultOutputDevice;

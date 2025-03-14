@@ -12,7 +12,8 @@ public:
     void reset();
 
     void process(int& lastTime, std::vector<double>& times,
-                 std::vector<double>& pitches);
+                 std::vector<double>& pitches,
+                 std::vector<double>& saliences);
 
 private:
     AppState& appState;

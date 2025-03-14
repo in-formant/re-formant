@@ -46,7 +46,8 @@ void RAPT::reset() {
 }
 
 void RAPT::process(int& lastTime, std::vector<double>& times,
-                   std::vector<double>& pitches) {
+                   std::vector<double>& pitches,
+                   std::vector<double>& saliences) {
     // Track sample rate.
     const double Fs = appState.audioTrack.sampleRate();
 
@@ -117,13 +118,15 @@ void RAPT::process(int& lastTime, std::vector<double>& times,
             if (vo_bias + maxVal >= minCost) {
                 const double Linterp = util::parabolicInterpolation(nccf, minLag).first;
                 pitch = Fs / Linterp;
+
+                times.push_back(time);
+                pitches.push_back(pitch);
+                saliences.push_back(1.0);
             }
+
         }
 
         is += wl;
-
-        times.push_back(time);
-        pitches.push_back(pitch);
     }
 
     lastTime += is;

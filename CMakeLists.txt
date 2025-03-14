@@ -9,7 +9,7 @@ set(PROJECT_VERSION 0.1-alpha.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(CMakeRC)
+find_package(CMakeRC REQUIRED)
 
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "CMAKE_BUILD_TYPE was not set: defaults to RelWithDebInfo")
